@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader, Stat } from "@/components/AppShell";
@@ -69,8 +69,8 @@ function ComissoesPage() {
             <tr><th className="px-4 py-3">Profissional</th><th className="px-4 py-3 text-right">Serviços</th><th className="px-4 py-3 text-right">Com. serviços</th><th className="px-4 py-3 text-right">Produtos</th><th className="px-4 py-3 text-right">Com. produtos</th><th className="px-4 py-3 text-right">Total comissão</th><th /></tr>
           </thead>
           <tbody>
-            {rows.map((r: any) => (<>
-              <tr key={r.p.id} className="cursor-pointer border-b hover:bg-muted/30" onClick={() => setOpen(open === r.p.id ? null : r.p.id)}>
+            {rows.map((r: any) => (<Fragment key={r.p.id}>
+              <tr className="cursor-pointer border-b hover:bg-muted/30" onClick={() => setOpen(open === r.p.id ? null : r.p.id)}>
                 <td className="px-4 py-3 font-medium">{r.p.name}</td>
                 <td className="px-4 py-3 text-right">{brl(r.svcSales)}</td>
                 <td className="px-4 py-3 text-right">{brl(r.svcComm)}</td>
@@ -87,7 +87,7 @@ function ComissoesPage() {
                   <td className="px-4 py-2 text-right">{brl(Number(i.qty) * Number(i.unit_price) * Number(i.commission_pct) / 100)}</td><td />
                 </tr>
               ))}
-            </>))}
+            </Fragment>))}
           </tbody>
         </table>
       </div>
