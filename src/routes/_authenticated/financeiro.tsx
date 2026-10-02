@@ -56,9 +56,9 @@ function FinanceiroPage() {
 
   // daily cash flow
   const days: Record<string, { in: number; out: number }> = {};
-  tx.forEach((t: any) => { days[t.date] ??= { in: 0, out: 0 }; days[t.date][t.type === "receita" ? "in" : "out"] += Number(t.amount); });
+  tx.forEach((t: any) => { const d = (days[t.date] ??= { in: 0, out: 0 }); d[t.type === "receita" ? "in" : "out"] += Number(t.amount); });
   let running = before;
-  const flow = Object.keys(days).sort().map((d) => { running += days[d].in - days[d].out; return { d, ...days[d], bal: running }; });
+  const flow = Object.keys(days).sort().map((d) => { const v = days[d]!; running += v.in - v.out; return { d, in: v.in, out: v.out, bal: running }; });
   const max = Math.max(1, ...flow.map((f) => Math.max(f.in, f.out)));
 
   const byCat: Record<string, number> = {};

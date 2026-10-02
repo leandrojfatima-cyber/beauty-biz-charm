@@ -49,7 +49,7 @@ function AuthPage() {
 
   async function google() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) return toast.error("Não foi possível entrar com Google");
+    if (r.error) { toast.error("Não foi possível entrar com Google"); return; }
     if (r.redirected) return;
     navigate({ to: "/painel" });
   }

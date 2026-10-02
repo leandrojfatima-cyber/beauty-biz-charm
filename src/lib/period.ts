@@ -1,7 +1,7 @@
 import { todayISO } from "@/lib/db";
 
 export function monthRange(ym: string) {
-  const [y, m] = ym.split("-").map(Number);
+  const [y = 2000, m = 1] = ym.split("-").map(Number);
   const start = `${ym}-01`;
   const last = new Date(y, m, 0).getDate();
   return { start, end: `${ym}-${String(last).padStart(2, "0")}` };

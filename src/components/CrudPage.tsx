@@ -26,7 +26,7 @@ export type Column = { label: string; render: (row: any) => ReactNode; className
 export function CrudPage({
   table, title, subtitle, singular, fields, columns, extraActions, orderBy = "name",
 }: {
-  table: string; title: string; subtitle?: string; singular: string;
+  table: string; title: string; subtitle?: string | undefined; singular: string;
   fields: Field[]; columns: Column[]; extraActions?: (row: any) => ReactNode; orderBy?: string;
 }) {
   const qc = useQueryClient();
