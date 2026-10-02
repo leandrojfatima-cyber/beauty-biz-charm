@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { brl, db, fmtDate, fmtTime } from "@/lib/db";
 import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lookups";
-import { Pick } from "./agenda";
+import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/comandas/$id")({
   head: () => ({ meta: [{ title: "Comanda — Salão" }] }),

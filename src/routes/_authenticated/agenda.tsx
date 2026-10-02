@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db, fmtTime, todayISO } from "@/lib/db";
 import { openOrder, useClients, useProfessionals, useServices } from "@/lib/lookups";
 import { cn } from "@/lib/utils";
+import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({ meta: [{ title: "Agenda — Salão" }] }),
@@ -136,17 +136,6 @@ function AgendaPage() {
             <Button onClick={() => save.mutate()} disabled={!form?.professional_id || save.isPending}>Agendar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-export function Pick({ label, value, onChange, items }: { label: string; value?: string; onChange: (v: string) => void; items: any[] }) {
-  return (
-    <div><Label className="mb-1.5 block">{label}</Label>
-      <Select value={value ?? ""} onValueChange={onChange}>
-        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-        <SelectContent>{items.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
-      </Select>
     </div>
   );
 }
