@@ -32,7 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background md:flex">
       <header className="flex items-center justify-between border-b bg-sidebar px-4 py-3 text-sidebar-foreground md:hidden">
-        <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">Salão<span className="text-sidebar-primary">.</span></span>
+        <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
         <button onClick={() => setOpen(!open)} aria-label="Menu">{open ? <X /> : <Menu />}</button>
       </header>
       <aside
@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="hidden px-6 py-6 md:block">
-          <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">Salão<span className="text-sidebar-primary">.</span></span>
+          <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
           <p className="text-xs text-sidebar-foreground/60">Gestão completa</p>
         </div>
         <nav className="flex-1 space-y-0.5 px-3 py-2">

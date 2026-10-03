@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Salão — Gestão completa para cabeleireiros e manicures" },
+      { title: "Belezi — Gestão completa para cabeleireiros e manicures" },
       { name: "description", content: "Agenda, comandas, comissões por serviço e produto, estoque e financeiro integrados." },
-      { property: "og:title", content: "Salão — Gestão completa para seu salão" },
+      { property: "og:title", content: "Belezi — Gestão completa para seu salão" },
       { property: "og:description", content: "Agenda, comandas, comissões, estoque e fluxo de caixa em um só sistema." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -28,7 +28,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-display text-xl font-semibold">Salão<span className="text-primary">.</span></span>
+        <span className="font-display text-xl font-semibold">Belezi<span className="text-primary">.</span></span>
         <Button asChild variant="outline"><Link to="/auth">Entrar</Link></Button>
       </header>
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 md:pt-24">

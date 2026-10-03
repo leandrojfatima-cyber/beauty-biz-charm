@@ -11,7 +11,7 @@ import { brl, db, fmtDate, fmtTime } from "@/lib/db";
 import { openOrder, useClients } from "@/lib/lookups";
 
 export const Route = createFileRoute("/_authenticated/comandas/")({
-  head: () => ({ meta: [{ title: "Comandas — Salão" }] }),
+  head: () => ({ meta: [{ title: "Comandas — Belezi" }] }),
   component: ComandasPage,
 });
 

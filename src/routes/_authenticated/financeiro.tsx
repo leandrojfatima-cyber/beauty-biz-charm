@@ -13,7 +13,7 @@ import { brl, db, fmtDate, todayISO } from "@/lib/db";
 import { currentMonth, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
-  head: () => ({ meta: [{ title: "Financeiro — Salão" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — Belezi" }] }),
   component: FinanceiroPage,
 });
 

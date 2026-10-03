@@ -10,7 +10,7 @@ export const ROLES = [
 ];
 
 export const Route = createFileRoute("/_authenticated/profissionais")({
-  head: () => ({ meta: [{ title: "Profissionais — Salão" }] }),
+  head: () => ({ meta: [{ title: "Profissionais — Belezi" }] }),
   component: () => (
     <CrudPage table="professionals" title="Profissionais" subtitle="Equipe do salão. As comissões são definidas em cada serviço e produto." singular="profissional"
       fields={[

@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar — Salão" },
+      { title: "Entrar — Belezi" },
       { name: "description", content: "Acesse o sistema de gestão do seu salão." },
-      { property: "og:title", content: "Entrar — Salão" },
+      { property: "og:title", content: "Entrar — Belezi" },
       { property: "og:description", content: "Acesse o sistema de gestão do seu salão." },
     ],
   }),
@@ -57,7 +57,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-xl border bg-card p-8">
-        <h1 className="text-2xl font-semibold">Salão<span className="text-primary">.</span></h1>
+        <h1 className="text-2xl font-semibold">Belezi<span className="text-primary">.</span></h1>
         <p className="mb-6 text-sm text-muted-foreground">{mode === "in" ? "Entre na sua conta" : "Crie a conta do salão"}</p>
         <form onSubmit={submit} className="space-y-4">
           <div><Label className="mb-1.5 block">E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>

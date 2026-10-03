@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  head: () => ({ meta: [{ title: "Agenda — Salão" }] }),
+  head: () => ({ meta: [{ title: "Agenda — Belezi" }] }),
   component: AgendaPage,
 });
 
