@@ -50,6 +50,7 @@ function Index() {
           </div>
         ))}
       </section>
+      <footer className="border-t py-6 text-center text-sm text-muted-foreground">Belezi — Sistema de Agendamento Online © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
     </div>
   );
 }
