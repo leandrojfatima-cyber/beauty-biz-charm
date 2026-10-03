@@ -8,6 +8,13 @@
       "when": 1791029029628,
       "tag": "0000_master_audit_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791030423240,
+      "tag": "0001_salon_settings",
+      "breakpoints": true
     }
   ]
 }
