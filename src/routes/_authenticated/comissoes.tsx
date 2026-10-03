@@ -10,7 +10,7 @@ import { useProfessionals } from "@/lib/lookups";
 import { currentMonth, dayBounds, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/comissoes")({
-  head: () => ({ meta: [{ title: "Comissões — Salão" }] }),
+  head: () => ({ meta: [{ title: "Comissões — Belezi" }] }),
   component: ComissoesPage,
 });
 

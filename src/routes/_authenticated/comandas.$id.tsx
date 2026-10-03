@@ -14,7 +14,7 @@ import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lo
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/comandas/$id")({
-  head: () => ({ meta: [{ title: "Comanda — Salão" }] }),
+  head: () => ({ meta: [{ title: "Comanda — Belezi" }] }),
   component: ComandaPage,
 });
 

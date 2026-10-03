@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { logAudit } from "@/lib/audit";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X,
+  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { data: isMaster } = useQuery({ queryKey: ["is-master"], queryFn: async () => { const { data } = await (supabase as any).rpc("claim_master"); return !!data; } });
   async function signOut() {
+    await logAudit("Saiu do sistema");
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
@@ -32,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background md:flex">
       <header className="flex items-center justify-between border-b bg-sidebar px-4 py-3 text-sidebar-foreground md:hidden">
-        <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">Salão<span className="text-sidebar-primary">.</span></span>
+        <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
         <button onClick={() => setOpen(!open)} aria-label="Menu">{open ? <X /> : <Menu />}</button>
       </header>
       <aside
@@ -42,8 +45,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="hidden px-6 py-6 md:block">
-          <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">Salão<span className="text-sidebar-primary">.</span></span>
-          <p className="text-xs text-sidebar-foreground/60">Gestão completa</p>
+          <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
+          <p className="text-xs text-sidebar-foreground/60">Sistema de Agendamento Online</p>
         </div>
         <nav className="flex-1 space-y-0.5 px-3 py-2">
           {nav.map(({ to, label, icon: Icon }) => (
@@ -58,10 +61,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               {label}
             </Link>
           ))}
+          {isMaster && (
+            <Link to="/master" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground [&>svg]:text-sidebar-primary" }}>
+              <ShieldCheck className="h-4 w-4" />Conta Master
+            </Link>
+          )}
         </nav>
         <button onClick={signOut} className="m-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent">
           <LogOut className="h-4 w-4" /> Sair
         </button>
+        <p className="px-6 pb-4 text-[10px] leading-tight text-sidebar-foreground/50">Belezi © 2026 · Desenvolvido e comercializado por NEXADASH</p>
       </aside>
       <main className="flex-1 p-4 md:p-8">{children}</main>
     </div>

@@ -10,7 +10,7 @@ const CATS = [
 ];
 
 export const Route = createFileRoute("/_authenticated/servicos")({
-  head: () => ({ meta: [{ title: "Serviços — Salão" }] }),
+  head: () => ({ meta: [{ title: "Serviços — Belezi" }] }),
   component: () => (
     <CrudPage table="services" title="Serviços" subtitle="Preço, duração e comissão de cada serviço." singular="serviço"
       fields={[

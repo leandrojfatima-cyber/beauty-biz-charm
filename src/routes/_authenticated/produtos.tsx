@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { brl, db } from "@/lib/db";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
-  head: () => ({ meta: [{ title: "Produtos e estoque — Salão" }] }),
+  head: () => ({ meta: [{ title: "Produtos e estoque — Belezi" }] }),
   component: ProdutosPage,
 });
 

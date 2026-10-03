@@ -75,6 +75,36 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          device: string | null
+          email: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          device?: string | null
+          email?: string | null
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          device?: string | null
+          email?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           created_at: string
@@ -232,6 +262,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          installment_price: number
+          installments: number
+          name: string
+          optional: boolean
+          price: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          installment_price?: number
+          installments?: number
+          name: string
+          optional?: boolean
+          price?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          installment_price?: number
+          installments?: number
+          name?: string
+          optional?: boolean
+          price?: number
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -426,18 +489,44 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_master: { Args: never; Returns: boolean }
       close_order: {
         Args: { _order_id: string; _payment_method: string }
         Returns: undefined
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "master"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -564,6 +653,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["master"],
+    },
   },
 } as const

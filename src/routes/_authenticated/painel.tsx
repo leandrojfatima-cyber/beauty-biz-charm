@@ -7,7 +7,7 @@ import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lo
 import { currentMonth, dayBounds, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => ({ meta: [{ title: "Painel — Salão" }] }),
+  head: () => ({ meta: [{ title: "Painel — Belezi" }] }),
   component: Painel,
 });
 

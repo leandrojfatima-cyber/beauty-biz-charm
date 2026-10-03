@@ -15,3 +15,5 @@
 - Closing a comanda goes through the `close_order` database function — keeps total, revenue entry, stock deduction and appointment completion atomic.
 - Stock levels change only via `stock_movements` inserts (trigger updates `products.stock`) — keeps an audit trail.
 - Commission % is copied onto each `order_items` row at insert time — later catalog price/% changes don't alter past commissions.
+- Master (audit) access is the `master` role in `user_roles`, granted only by `claim_master()` to the one confirmed authorised e-mail — no credentials in code.
+- Audit trail rows are written client-side via `logAudit` into `audit_logs` (insert-own, master-read) — keeps logging simple without server functions.
