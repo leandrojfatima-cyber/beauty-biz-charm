@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Plus, Receipt, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Receipt, X } from "lucide-react";
+import { WhatsAppDialog, type WaAppointment } from "@/components/WhatsAppDialog";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ function AgendaPage() {
   });
 
   const [form, setForm] = useState<any | null>(null);
+  const [wa, setWa] = useState<WaAppointment | null>(null);
   const save = useMutation({
     mutationFn: async () => {
       const s = services.find((x: any) => x.id === form.service_id);
@@ -107,6 +109,9 @@ function AgendaPage() {
                       </div>
                       {a.status === "agendado" && (
                         <div className="flex flex-col gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Mensagem no WhatsApp" onClick={() => setWa({
+                            startsAt: a.starts_at, client: clients.find((c: any) => c.id === a.client_id)?.name, phone: clients.find((c: any) => c.id === a.client_id)?.phone,
+                            service: services.find((s: any) => s.id === a.service_id)?.name, professional: p.name })}><MessageCircle className="h-4 w-4 text-success" /></Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir comanda" onClick={() => toOrder.mutate(a)}><Receipt className="h-4 w-4 text-primary" /></Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7" title="Cancelar" onClick={() => confirm("Cancelar agendamento?") && cancel.mutate(a.id)}><X className="h-4 w-4 text-destructive" /></Button>
                         </div>
@@ -119,6 +124,8 @@ function AgendaPage() {
           );
         })}
       </div>
+
+      <WhatsAppDialog appt={wa} onClose={() => setWa(null)} />
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
         <DialogContent>

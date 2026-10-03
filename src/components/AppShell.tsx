@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { logAudit } from "@/lib/audit";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X, ShieldCheck,
+  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X, ShieldCheck, Store,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
