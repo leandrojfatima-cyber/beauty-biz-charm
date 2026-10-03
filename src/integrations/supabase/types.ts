@@ -371,6 +371,36 @@ export type Database = {
         }
         Relationships: []
       }
+      salon_settings: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          maps_link: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          id?: string
+          maps_link?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          maps_link?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           active: boolean

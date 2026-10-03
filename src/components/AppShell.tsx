@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { logAudit } from "@/lib/audit";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X, ShieldCheck,
+  LayoutDashboard, CalendarDays, Receipt, Users, Scissors, Package, Wallet, Percent, UserRound, LogOut, Menu, X, ShieldCheck, Store,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ const nav = [
   { to: "/produtos", label: "Produtos e estoque", icon: Package },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/comissoes", label: "Comissões", icon: Percent },
+  { to: "/salao", label: "Dados do salão", icon: Store },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
