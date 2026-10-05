@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, Receipt, Percent, Package, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, Receipt, Percent, Package, Wallet, ExternalLink, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import painelImage from "@/assets/belezi-painel-demo.jpg.asset.json";
+import agendaImage from "@/assets/belezi-agenda-demo.jpg.asset.json";
+import financeiroImage from "@/assets/belezi-financeiro-demo.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,40 +20,68 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: CalendarDays, t: "Agenda", d: "Horários por profissional, cabelo e unhas." },
-  { icon: Receipt, t: "Comandas", d: "Serviços e produtos vinculados a quem atendeu." },
-  { icon: Percent, t: "Comissões", d: "Percentual por serviço e por produto, calculado sozinho." },
-  { icon: Package, t: "Estoque", d: "Produtos de uso interno e venda, com alerta de mínimo." },
-  { icon: Wallet, t: "Financeiro", d: "Receitas, despesas e fluxo de caixa do período." },
+  { icon: CalendarDays, t: "Agenda" },
+  { icon: Receipt, t: "Comandas" },
+  { icon: Percent, t: "Comissões" },
+  { icon: Package, t: "Estoque" },
+  { icon: Wallet, t: "Financeiro" },
+];
+
+const screenshots = [
+  { image: painelImage.url, title: "Seu salão em um só lugar", label: "01 · Painel", description: "Agenda do dia, receitas e estoque." },
+  { image: agendaImage.url, title: "Cada horário organizado", label: "02 · Agenda", description: "Atendimentos separados por profissional." },
+  { image: financeiroImage.url, title: "O caixa sempre à vista", label: "03 · Financeiro", description: "Entradas, despesas e saldo do período." },
 ];
 
 function Index() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-3 py-3 sm:px-6 sm:py-6">
-        <span className="font-display text-xl font-semibold">Belezi<span className="text-primary">.</span></span>
-        <Button asChild variant="outline"><Link to="/auth">Entrar</Link></Button>
+    <div className="belezi-home bg-background">
+      <header className="home-header flex items-center justify-between gap-3 border-b">
+        <Link to="/" aria-label="Belezi — Página inicial" className="font-display text-xl font-semibold">Belezi<span className="text-primary">.</span></Link>
+        <span className="hidden text-xs text-muted-foreground sm:block">Sistema de Agendamento Online</span>
+        <Button asChild variant="outline" size="sm"><Link to="/auth">Entrar <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
       </header>
-      <section className="mx-auto max-w-6xl px-3 pb-6 pt-4 sm:px-6 sm:pb-16 sm:pt-12 md:pt-24">
-        <p className="mb-4 text-sm font-medium uppercase tracking-widest text-primary">Gestão de salão</p>
-        <h1 className="max-w-3xl text-2xl font-semibold sm:text-4xl leading-tight md:text-6xl">
-          Agenda, comandas e caixa do salão, tudo no mesmo lugar.
-        </h1>
-        <p className="mt-3 max-w-xl text-sm sm:mt-6 sm:text-lg text-muted-foreground">
-          Feche a comanda e o sistema já calcula a comissão de cada profissional, baixa o estoque e lança a receita.
-        </p>
-        <Button asChild size="lg" className="mt-4 sm:mt-8"><Link to="/painel">Acessar o sistema</Link></Button>
+      <section className="home-intro">
+        <p className="mb-1 text-xs font-medium uppercase text-primary">Gestão para cabeleireiros e manicures</p>
+        <h1 className="font-semibold">Belezi<span className="text-primary">.</span> Seu salão, conectado.</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Agenda, comandas, comissões, estoque e caixa em um só sistema.</p>
+        <div className="home-features mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          {features.map(({ icon: Icon, t }) => <span key={t} className="flex items-center gap-1.5 text-xs"><Icon className="h-3.5 w-3.5 text-primary" />{t}</span>)}
+        </div>
       </section>
-      <section className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-lg border bg-border px-0 grid-cols-2 lg:grid-cols-5 mb-6 sm:mb-20">
-        {features.map(({ icon: Icon, t, d }) => (
-          <div key={t} className="bg-card p-3 sm:p-6">
-            <Icon className="h-5 w-5 text-primary" />
-            <h3 className="mt-2 font-semibold sm:mt-4">{t}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{d}</p>
+      <section className="home-showcase" aria-label="Telas do sistema Belezi">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Conheça o Belezi por dentro</h2>
+          <span className="text-[10px] text-muted-foreground">Dados fictícios para demonstração</span>
+        </div>
+        <div className="home-screenshots">
+          {screenshots.map(({ image, title, label, description }) => (
+            <figure key={label} className="home-screenshot">
+              <div className="home-image border bg-card"><img src={image} alt={`${label}: tela real do Belezi com dados fictícios`} width={1280} height={800} /></div>
+              <figcaption className="pt-2">
+                <span className="text-[10px] font-medium uppercase text-primary">{label}</span>
+                <h3 className="mt-0.5 text-sm font-semibold">{title}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+      <section className="home-offer border-y border-primary/20 bg-accent text-accent-foreground" aria-label="Venda do sistema Belezi">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase text-primary">Belezi para o seu negócio</p>
+          <h2 className="mt-1 text-lg font-semibold">Leve o Belezi para o seu salão.</h2>
+          <p className="mt-1 flex items-center gap-1.5 text-xs"><Check className="h-3.5 w-3.5 shrink-0" />Do agendamento ao fechamento da comanda.</p>
+        </div>
+        <div className="home-offer-actions">
+          <div className="flex flex-wrap gap-2">
+            <Button asChild><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">Comprar pelo Mercado Pago <ExternalLink className="h-3.5 w-3.5" /></a></Button>
+            <Button asChild variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
           </div>
-        ))}
+          <p className="mt-1.5 text-[10px] text-muted-foreground">Confira os valores e as condições na página de pagamento.</p>
+        </div>
       </section>
-      <footer className="border-t px-3 py-3 text-center text-xs sm:py-6 sm:text-sm text-muted-foreground">Belezi — Sistema de Agendamento Online © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
+      <footer className="home-footer text-[10px] text-muted-foreground">Belezi © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
     </div>
   );
 }

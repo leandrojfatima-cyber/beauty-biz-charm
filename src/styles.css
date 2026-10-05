@@ -153,6 +153,53 @@
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
 }
 
+/* Public home: compact, single-viewport presentation on desktop only. */
+.belezi-home { width: min(100%, 1440px); margin-inline: auto; padding: 0 32px; }
+.home-header { padding-block: 12px; }
+.home-intro { padding-block: 20px 8px; }
+.home-intro h1 { font-size: 32px; line-height: 1.2; }
+.home-showcase { min-height: 0; display: flex; flex-direction: column; }
+.home-screenshots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; min-height: 0; }
+.home-screenshot { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.home-image { border-radius: var(--radius); overflow: hidden; min-height: 0; }
+.home-image img { display: block; width: 100%; height: auto; object-fit: contain; }
+.home-offer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 20px; margin-top: 12px; }
+.home-offer-actions { flex-shrink: 0; }
+.home-footer { padding-block: 10px; text-align: center; }
+@media (min-width: 1024px) {
+  .belezi-home { height: 100dvh; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 12px; }
+  .home-showcase { justify-content: center; }
+  .home-screenshots { max-height: 100%; }
+  .home-image { flex: 1; }
+  .home-image img { height: 100%; max-height: 400px; }
+  .home-screenshot figcaption { flex-shrink: 0; }
+  .home-offer { margin-top: 0; }
+}
+@media (min-width: 1024px) and (max-height: 650px) {
+  .belezi-home { gap: 8px; }
+  .home-header { padding-block: 8px; }
+  .home-intro { padding-block: 2px; }
+  .home-intro h1 { font-size: 28px; }
+  .home-intro .home-features { margin-top: 8px; }
+  .home-offer { padding-block: 10px; }
+  .home-footer { padding-block: 6px; }
+}
+@media (max-width: 1023px) {
+  .belezi-home { padding-inline: 16px; }
+  .home-showcase { margin-top: 16px; }
+  .home-offer { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .home-offer-actions { flex-shrink: 1; }
+}
+@media (max-width: 639px) {
+  .belezi-home { padding-inline: 12px; }
+  .home-intro { padding-block: 14px 0; }
+  .home-intro h1 { font-size: 24px; }
+  .home-screenshots { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .home-offer { padding: 12px; }
+  .home-offer-actions, .home-offer-actions [data-slot="button"] { width: 100%; }
+  .home-offer-actions [data-slot="button"] { font-size: 12px; }
+}
+
 /* Compact mobile presentation; desktop spacing is unchanged. */
 @media (max-width: 767px) {
   .app-shell { font-size: 0.8125rem; }
