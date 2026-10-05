@@ -84,7 +84,7 @@ function ComissoesPage() {
                 <tr key={i.id} className="border-b bg-muted/20 text-xs text-muted-foreground">
                   <td className="px-8 py-2" colSpan={2}>#{i.orders.number} · {i.description} ×{Number(i.qty)}</td>
                   <td className="px-4 py-2 text-right" colSpan={3}>{brl(Number(i.qty) * Number(i.unit_price))} × {Number(i.commission_pct)}%</td>
-                  <td data-label="Profissional" className="px-4 py-2 text-right">{brl(Number(i.qty) * Number(i.unit_price) * Number(i.commission_pct) / 100)}</td><td data-label="Serviços" />
+                  <td data-label="Comissão" className="px-4 py-2 text-right">{brl(Number(i.qty) * Number(i.unit_price) * Number(i.commission_pct) / 100)}</td><td />
                 </tr>
               ))}
             </Fragment>))}
