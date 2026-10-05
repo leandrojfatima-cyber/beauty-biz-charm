@@ -13,7 +13,7 @@ import { brl, db, fmtDate, todayISO } from "@/lib/db";
 import { currentMonth, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
-  head: () => ({ meta: [{ title: "Financeiro — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Financeiro — Belezi" }, { name: "description", content: "Gerencie financeiro do seu salão no Belezi." }, { property: "og:title", content: "Financeiro — Belezi" }, { property: "og:description", content: "Gerencie financeiro do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: FinanceiroPage,
 });
 

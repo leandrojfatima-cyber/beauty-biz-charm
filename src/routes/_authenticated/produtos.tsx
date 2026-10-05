@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { brl, db } from "@/lib/db";
 
 export const Route = createFileRoute("/_authenticated/produtos")({
-  head: () => ({ meta: [{ title: "Produtos e estoque — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Produtos e estoque — Belezi" }, { name: "description", content: "Gerencie produtos e estoque do seu salão no Belezi." }, { property: "og:title", content: "Produtos e estoque — Belezi" }, { property: "og:description", content: "Gerencie produtos e estoque do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ProdutosPage,
 });
 

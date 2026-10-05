@@ -14,7 +14,7 @@ import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lo
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/comandas/$id")({
-  head: () => ({ meta: [{ title: "Comanda — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Comanda — Belezi" }, { name: "description", content: "Consulte serviços, produtos, comissões e pagamento desta comanda no Belezi." }, { property: "og:title", content: "Comanda — Belezi" }, { property: "og:description", content: "Consulte serviços, produtos, comissões e pagamento desta comanda no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ComandaPage,
 });
 

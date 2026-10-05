@@ -11,7 +11,7 @@ import { brl, db } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 
 export const Route = createFileRoute("/_authenticated/master")({
-  head: () => ({ meta: [{ title: "Conta Master — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Conta Master — Belezi" }, { name: "description", content: "Consulte a auditoria e gerencie os valores de venda do Belezi com acesso restrito." }, { property: "og:title", content: "Conta Master — Belezi" }, { property: "og:description", content: "Consulte a auditoria e gerencie os valores de venda do Belezi com acesso restrito." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: MasterPage,
 });
 

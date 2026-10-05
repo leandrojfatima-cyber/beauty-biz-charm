@@ -10,7 +10,7 @@ import { useProfessionals } from "@/lib/lookups";
 import { currentMonth, dayBounds, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/comissoes")({
-  head: () => ({ meta: [{ title: "Comissões — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Comissões — Belezi" }, { name: "description", content: "Gerencie comissões do seu salão no Belezi." }, { property: "og:title", content: "Comissões — Belezi" }, { property: "og:description", content: "Gerencie comissões do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ComissoesPage,
 });
 

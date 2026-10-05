@@ -11,7 +11,7 @@ import { brl, db, fmtDate, fmtTime } from "@/lib/db";
 import { openOrder, useClients } from "@/lib/lookups";
 
 export const Route = createFileRoute("/_authenticated/comandas/")({
-  head: () => ({ meta: [{ title: "Comandas — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Comandas — Belezi" }, { name: "description", content: "Gerencie comandas do seu salão no Belezi." }, { property: "og:title", content: "Comandas — Belezi" }, { property: "og:description", content: "Gerencie comandas do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ComandasPage,
 });
 

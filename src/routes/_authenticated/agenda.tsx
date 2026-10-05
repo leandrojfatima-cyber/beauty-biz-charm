@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  head: () => ({ meta: [{ title: "Agenda — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Agenda — Belezi" }, { name: "description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:title", content: "Agenda — Belezi" }, { property: "og:description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: AgendaPage,
 });
 
