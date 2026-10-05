@@ -70,7 +70,7 @@ function MasterPage() {
       <section>
         <PageHeader title="Auditoria" subtitle="Tudo o que foi feito no sistema" actions={<Input placeholder="Buscar..." value={filter} onChange={(e) => setFilter(e.target.value)} className="w-56" />} />
         <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full text-sm">
+          <table className="mobile-table w-full text-sm">
             <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr><th className="px-4 py-3">Data / hora</th><th className="px-4 py-3">Usuário / e-mail</th><th className="px-4 py-3">Ação</th><th className="px-4 py-3">Dispositivo</th><th className="px-4 py-3">Detalhes</th></tr>
             </thead>
@@ -78,11 +78,11 @@ function MasterPage() {
               {shown.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Nenhum registro.</td></tr>}
               {shown.map((l: any) => (
                 <tr key={l.id} className="border-b last:border-0">
-                  <td className="whitespace-nowrap px-4 py-3">{new Date(l.created_at).toLocaleString("pt-BR")}</td>
-                  <td className="px-4 py-3">{l.email}</td>
-                  <td className="px-4 py-3 font-medium">{l.action}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{l.device}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{l.details}</td>
+                  <td data-label="Data / hora" className="whitespace-nowrap px-4 py-3">{new Date(l.created_at).toLocaleString("pt-BR")}</td>
+                  <td data-label="Usuário / e-mail" className="px-4 py-3">{l.email}</td>
+                  <td data-label="Ação" className="px-4 py-3 font-medium">{l.action}</td>
+                  <td data-label="Dispositivo" className="px-4 py-3 text-muted-foreground">{l.device}</td>
+                  <td data-label="Detalhes" className="px-4 py-3 text-muted-foreground">{l.details}</td>
                 </tr>
               ))}
             </tbody>
@@ -97,8 +97,8 @@ function PlanRow({ plan, onSave, onDelete }: { plan: any; onSave: (p: any) => vo
   const [p, setP] = useState(plan);
   const num = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setP({ ...p, [k]: Number(e.target.value || 0) });
   return (
-    <div className="grid items-end gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_120px_90px_120px_auto_auto_auto]">
-      <label className="text-xs text-muted-foreground">Nome<Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} /></label>
+    <div className="grid grid-cols-2 items-end gap-3 rounded-lg border bg-card p-4 xl:grid-cols-[1fr_120px_90px_120px_auto_auto_auto]">
+      <label className="col-span-2 text-xs text-muted-foreground xl:col-span-1">Nome<Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} /></label>
       <label className="text-xs text-muted-foreground">À vista (R$)<Input type="number" step="0.01" value={p.price} onChange={num("price")} /></label>
       <label className="text-xs text-muted-foreground">Parcelas<Input type="number" min="1" value={p.installments} onChange={num("installments")} /></label>
       <label className="text-xs text-muted-foreground">Valor parcela<Input type="number" step="0.01" value={p.installment_price} onChange={num("installment_price")} /></label>

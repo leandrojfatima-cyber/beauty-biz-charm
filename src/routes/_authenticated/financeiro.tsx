@@ -85,7 +85,7 @@ function FinanceiroPage() {
           {flow.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Sem movimentações no mês.</p> : (
             <div className="flex h-40 items-end gap-1.5 overflow-x-auto">
               {flow.map((f) => (
-                <div key={f.d} className="flex min-w-6 flex-1 flex-col items-center gap-1" title={`${fmtDate(f.d + "T12:00")}: +${brl(f.in)} / -${brl(f.out)} · saldo ${brl(f.bal)}`}>
+                <div key={f.d} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={`${fmtDate(f.d + "T12:00")}: +${brl(f.in)} / -${brl(f.out)} · saldo ${brl(f.bal)}`}>
                   <div className="flex h-32 w-full items-end gap-0.5">
                     <div className="flex-1 rounded-t bg-success" style={{ height: `${(f.in / max) * 100}%` }} />
                     <div className="flex-1 rounded-t bg-destructive/80" style={{ height: `${(f.out / max) * 100}%` }} />
@@ -107,7 +107,7 @@ function FinanceiroPage() {
       </div>
 
       <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full text-sm">
+        <table className="mobile-table w-full text-sm">
           <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr><th className="px-4 py-3">Data</th><th className="px-4 py-3">Descrição</th><th className="px-4 py-3">Categoria</th><th className="px-4 py-3 text-right">Valor</th><th /></tr>
           </thead>
@@ -115,11 +115,11 @@ function FinanceiroPage() {
             {tx.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Nenhum lançamento.</td></tr>}
             {tx.map((t: any) => (
               <tr key={t.id} className="border-b last:border-0">
-                <td className="px-4 py-3">{fmtDate(t.date + "T12:00")}</td>
-                <td className="px-4 py-3">{t.description}</td>
-                <td className="px-4 py-3"><Badge variant="outline" className="capitalize">{t.category}</Badge></td>
-                <td className={"px-4 py-3 text-right font-medium " + (t.type === "receita" ? "text-success" : "text-destructive")}>{t.type === "receita" ? "+" : "−"}{brl(t.amount)}</td>
-                <td className="px-2">{!t.order_id && <Button size="icon" variant="ghost" onClick={() => confirm("Excluir lançamento?") && del.mutate(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</td>
+                <td data-label="Data" className="px-4 py-3">{fmtDate(t.date + "T12:00")}</td>
+                <td data-label="Descrição" className="px-4 py-3">{t.description}</td>
+                <td data-label="Categoria" className="px-4 py-3"><Badge variant="outline" className="capitalize">{t.category}</Badge></td>
+                <td data-label="Valor" className={"px-4 py-3 text-right font-medium " + (t.type === "receita" ? "text-success" : "text-destructive")}>{t.type === "receita" ? "+" : "−"}{brl(t.amount)}</td>
+                <td data-label="Ações" className="px-2">{!t.order_id && <Button size="icon" variant="ghost" onClick={() => confirm("Excluir lançamento?") && del.mutate(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</td>
               </tr>
             ))}
           </tbody>
