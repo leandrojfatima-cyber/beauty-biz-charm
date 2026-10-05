@@ -14,7 +14,7 @@ import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lo
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/comandas/$id")({
-  head: () => ({ meta: [{ title: "Comanda — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Comanda — Belezi" }, { name: "description", content: "Consulte serviços, produtos, comissões e pagamento desta comanda no Belezi." }, { property: "og:title", content: "Comanda — Belezi" }, { property: "og:description", content: "Consulte serviços, produtos, comissões e pagamento desta comanda no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ComandaPage,
 });
 
@@ -90,7 +90,7 @@ function ComandaPage() {
           {open && (
             <div className="rounded-lg border bg-card p-4">
               <p className="mb-3 text-sm font-semibold">Adicionar item</p>
-              <div className="grid items-end gap-3 sm:grid-cols-[130px_1fr_1fr_80px_auto]">
+              <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-[130px_minmax(0,1fr)_minmax(0,1fr)_80px_auto]">
                 <div><Label className="mb-1.5 block">Tipo</Label>
                   <Select value={item.kind} onValueChange={(v) => setItem({ ...item, kind: v, ref: undefined })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -105,7 +105,7 @@ function ComandaPage() {
           )}
 
           <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full text-sm">
+            <table className="mobile-table w-full text-sm">
               <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Profissional</th><th className="px-4 py-3 text-right">Qtd</th><th className="px-4 py-3 text-right">Total</th><th className="px-4 py-3 text-right">Comissão</th><th /></tr>
               </thead>
@@ -115,12 +115,12 @@ function ComandaPage() {
                   const t = Number(i.qty) * Number(i.unit_price);
                   return (
                     <tr key={i.id} className="border-b last:border-0">
-                      <td className="px-4 py-3"><span className="font-medium">{i.description}</span> <Badge variant="outline" className="ml-1 text-[10px]">{i.kind}</Badge></td>
-                      <td className="px-4 py-3">{proName(i.professional_id)}</td>
-                      <td className="px-4 py-3 text-right">{Number(i.qty)}</td>
-                      <td className="px-4 py-3 text-right">{brl(t)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">{brl(t * Number(i.commission_pct) / 100)} <span className="text-xs">({Number(i.commission_pct)}%)</span></td>
-                      <td className="px-2">{open && <Button size="icon" variant="ghost" onClick={() => delItem.mutate(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</td>
+                      <td data-label="Item" className="px-4 py-3"><span className="font-medium">{i.description}</span> <Badge variant="outline" className="ml-1 text-[10px]">{i.kind}</Badge></td>
+                      <td data-label="Profissional" className="px-4 py-3">{proName(i.professional_id)}</td>
+                      <td data-label="Qtd" className="px-4 py-3 text-right">{Number(i.qty)}</td>
+                      <td data-label="Total" className="px-4 py-3 text-right">{brl(t)}</td>
+                      <td data-label="Comissão" className="px-4 py-3 text-right text-muted-foreground">{brl(t * Number(i.commission_pct) / 100)} <span className="text-xs">({Number(i.commission_pct)}%)</span></td>
+                      <td data-label="Ações" className="px-2">{open && <Button size="icon" variant="ghost" onClick={() => delItem.mutate(i.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</td>
                     </tr>
                   );
                 })}

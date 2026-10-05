@@ -7,7 +7,7 @@ import { useClients, useProducts, useProfessionals, useServices } from "@/lib/lo
 import { currentMonth, dayBounds, monthRange } from "@/lib/period";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => ({ meta: [{ title: "Painel — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Painel — Belezi" }, { name: "description", content: "Acompanhe a agenda, receitas, comandas e estoque do salão no Belezi." }, { property: "og:title", content: "Painel — Belezi" }, { property: "og:description", content: "Acompanhe a agenda, receitas, comandas e estoque do salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Painel,
 });
 
@@ -65,10 +65,10 @@ function Painel() {
           <div className="flex items-center justify-between border-b px-4 py-3"><p className="font-semibold">Agenda de hoje</p><Link to="/agenda" className="text-sm text-primary">Ver agenda</Link></div>
           {(data?.appts ?? []).length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">Nenhum horário hoje.</p>}
           {(data?.appts ?? []).map((a: any) => (
-            <div key={a.id} className="flex items-center gap-4 border-b px-4 py-3 text-sm last:border-0">
+            <div key={a.id} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 border-b px-4 py-3 text-sm last:border-0">
               <span className="w-14 font-semibold">{fmtTime(a.starts_at)}</span>
               <span className="flex-1">{name(clients, a.client_id)} <span className="text-muted-foreground">· {name(services, a.service_id)}</span></span>
-              <span className="text-muted-foreground">{name(pros, a.professional_id)}</span>
+              <span className="col-start-2 text-muted-foreground sm:col-auto">{name(pros, a.professional_id)}</span>
             </div>
           ))}
         </div>

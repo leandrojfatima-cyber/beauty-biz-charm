@@ -66,7 +66,7 @@ export function CrudPage({
       } />
       <Input placeholder="Buscar pelo nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="mb-4 max-w-sm" />
       <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="w-full text-sm">
+        <table className="mobile-table w-full text-sm">
           <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>{columns.map((c) => <th key={c.label} className={"px-4 py-3 font-medium " + (c.className ?? "")}>{c.label}</th>)}<th className="w-px" /></tr>
           </thead>
@@ -75,8 +75,8 @@ export function CrudPage({
             {!isLoading && filtered.length === 0 && <tr><td className="px-4 py-10 text-center text-muted-foreground" colSpan={columns.length + 1}>Nenhum registro ainda.</td></tr>}
             {filtered.map((row: any) => (
               <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30">
-                {columns.map((c) => <td key={c.label} className={"px-4 py-3 " + (c.className ?? "")}>{c.render(row)}</td>)}
-                <td className="whitespace-nowrap px-2 py-2 text-right">
+                {columns.map((c) => <td key={c.label} data-label={c.label} className={"px-4 py-3 " + (c.className ?? "")}>{c.render(row)}</td>)}
+                <td data-label="Ações" className="whitespace-nowrap px-2 py-2 text-right">
                   {extraActions?.(row)}
                   <Button size="icon" variant="ghost" onClick={() => setEditing(row)} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => confirm("Excluir este registro?") && remove.mutate(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

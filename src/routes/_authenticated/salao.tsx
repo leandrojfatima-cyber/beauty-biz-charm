@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { useSalon } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/_authenticated/salao")({
-  head: () => ({ meta: [{ title: "Dados do salão — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Dados do salão — Belezi" }, { name: "description", content: "Gerencie dados do salão do seu salão no Belezi." }, { property: "og:title", content: "Dados do salão — Belezi" }, { property: "og:description", content: "Gerencie dados do salão do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SalaoPage,
 });
 

@@ -15,6 +15,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Acesse o sistema de gestão do seu salão." },
       { property: "og:title", content: "Entrar — Belezi" },
       { property: "og:description", content: "Acesse o sistema de gestão do seu salão." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -59,7 +61,7 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-xl border bg-card p-8">
+      <div className="w-full max-w-sm rounded-lg border bg-card p-4 sm:p-8">
         <h1 className="text-2xl font-semibold">Belezi<span className="text-primary">.</span></h1>
         <p className="mb-6 text-sm text-muted-foreground">{mode === "in" ? "Entre na sua conta" : "Crie a conta do salão"}</p>
         <form onSubmit={submit} className="space-y-4">

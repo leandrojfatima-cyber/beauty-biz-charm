@@ -27,30 +27,30 @@ const features = [
 function Index() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-3 py-3 sm:px-6 sm:py-6">
         <span className="font-display text-xl font-semibold">Belezi<span className="text-primary">.</span></span>
         <Button asChild variant="outline"><Link to="/auth">Entrar</Link></Button>
       </header>
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 md:pt-24">
+      <section className="mx-auto max-w-6xl px-3 pb-6 pt-4 sm:px-6 sm:pb-16 sm:pt-12 md:pt-24">
         <p className="mb-4 text-sm font-medium uppercase tracking-widest text-primary">Gestão de salão</p>
-        <h1 className="max-w-3xl text-4xl font-semibold leading-tight md:text-6xl">
+        <h1 className="max-w-3xl text-2xl font-semibold sm:text-4xl leading-tight md:text-6xl">
           Agenda, comandas e caixa do salão, tudo no mesmo lugar.
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
+        <p className="mt-3 max-w-xl text-sm sm:mt-6 sm:text-lg text-muted-foreground">
           Feche a comanda e o sistema já calcula a comissão de cada profissional, baixa o estoque e lança a receita.
         </p>
-        <Button asChild size="lg" className="mt-8"><Link to="/painel">Acessar o sistema</Link></Button>
+        <Button asChild size="lg" className="mt-4 sm:mt-8"><Link to="/painel">Acessar o sistema</Link></Button>
       </section>
-      <section className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-xl border bg-border px-0 sm:grid-cols-2 lg:grid-cols-5 mb-20">
+      <section className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-lg border bg-border px-0 grid-cols-2 lg:grid-cols-5 mb-6 sm:mb-20">
         {features.map(({ icon: Icon, t, d }) => (
-          <div key={t} className="bg-card p-6">
+          <div key={t} className="bg-card p-3 sm:p-6">
             <Icon className="h-5 w-5 text-primary" />
-            <h3 className="mt-4 font-semibold">{t}</h3>
+            <h3 className="mt-2 font-semibold sm:mt-4">{t}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{d}</p>
           </div>
         ))}
       </section>
-      <footer className="border-t py-6 text-center text-sm text-muted-foreground">Belezi — Sistema de Agendamento Online © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
+      <footer className="border-t px-3 py-3 text-center text-xs sm:py-6 sm:text-sm text-muted-foreground">Belezi — Sistema de Agendamento Online © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
     </div>
   );
 }

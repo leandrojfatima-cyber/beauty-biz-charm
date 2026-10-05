@@ -11,7 +11,7 @@ import { brl, db, fmtDate, fmtTime } from "@/lib/db";
 import { openOrder, useClients } from "@/lib/lookups";
 
 export const Route = createFileRoute("/_authenticated/comandas/")({
-  head: () => ({ meta: [{ title: "Comandas — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Comandas — Belezi" }, { name: "description", content: "Gerencie comandas do seu salão no Belezi." }, { property: "og:title", content: "Comandas — Belezi" }, { property: "og:description", content: "Gerencie comandas do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ComandasPage,
 });
 
@@ -52,7 +52,7 @@ function ComandasPage() {
                 <Badge variant={o.status === "aberta" ? "default" : "secondary"} className="capitalize">{o.status}</Badge>
               </div>
               <p className="mt-1">{clients.find((c: any) => c.id === o.client_id)?.name ?? "Sem cliente"}</p>
-              <div className="mt-3 flex items-end justify-between text-sm text-muted-foreground">
+              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 text-sm text-muted-foreground">
                 <span>{fmtDate(o.opened_at)} {fmtTime(o.opened_at)} · {o.order_items.length} itens</span>
                 <span className="font-semibold text-foreground">{brl(o.status === "fechada" ? o.total : sub)}</span>
               </div>

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  head: () => ({ meta: [{ title: "Agenda — Belezi" }] }),
+  head: () => ({ meta: [{ title: "Agenda — Belezi" }, { name: "description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:title", content: "Agenda — Belezi" }, { property: "og:description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: AgendaPage,
 });
 
@@ -78,16 +78,16 @@ function AgendaPage() {
   return (
     <div>
       <PageHeader title="Agenda" subtitle={label} actions={<>
-        <Button variant="outline" size="icon" onClick={() => setDate(shift(date, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" aria-label="Dia anterior" onClick={() => setDate(shift(date, -1))}><ChevronLeft className="h-4 w-4" /></Button>
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-        <Button variant="outline" size="icon" onClick={() => setDate(shift(date, 1))}><ChevronRight className="h-4 w-4" /></Button>
+        <Button variant="outline" size="icon" aria-label="Próximo dia" onClick={() => setDate(shift(date, 1))}><ChevronRight className="h-4 w-4" /></Button>
         <Button variant="outline" onClick={() => setDate(todayISO())}>Hoje</Button>
         <Button onClick={() => setForm({ time: "09:00", professional_id: activePros[0]?.id ?? "" })} disabled={!activePros.length}><Plus className="mr-1 h-4 w-4" />Agendar</Button>
       </>} />
 
       {!activePros.length && <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">Cadastre profissionais para começar a agendar.</p>}
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(240px, 1fr))` }}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {activePros.map((p: any) => {
           const mine = appts.filter((a: any) => a.professional_id === p.id);
           return (
@@ -101,14 +101,14 @@ function AgendaPage() {
                 {mine.map((a: any) => (
                   <div key={a.id} className={cn("rounded-md border-l-4 bg-muted/40 p-3 text-sm",
                     a.status === "agendado" && "border-l-primary", a.status === "concluido" && "border-l-success opacity-70", a.status === "cancelado" && "border-l-destructive opacity-50 line-through")}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                      <div className="min-w-0">
                         <p className="font-semibold">{fmtTime(a.starts_at)}–{fmtTime(a.ends_at)}</p>
                         <p>{name(clients, a.client_id)}</p>
                         <p className="text-muted-foreground">{name(services, a.service_id)}</p>
                       </div>
                       {a.status === "agendado" && (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex shrink-0 gap-1 sm:flex-col">
                           <Button size="icon" variant="ghost" className="h-7 w-7" title="Mensagem no WhatsApp" onClick={() => setWa({
                             startsAt: a.starts_at, client: clients.find((c: any) => c.id === a.client_id)?.name, phone: clients.find((c: any) => c.id === a.client_id)?.phone,
                             service: services.find((s: any) => s.id === a.service_id)?.name, professional: p.name })}><MessageCircle className="h-4 w-4 text-success" /></Button>

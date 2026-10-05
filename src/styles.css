@@ -150,5 +150,48 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0; }
+}
+
+/* Compact mobile presentation; desktop spacing is unchanged. */
+@media (max-width: 767px) {
+  .app-shell { font-size: 0.8125rem; }
+  .app-shell main :where(.grid > *, .flex > *) { min-width: 0; }
+  .app-shell main :where(.text-sm) { font-size: 0.75rem; }
+  .app-shell main :where(.p-4, .p-5, .p-6, .p-8) { padding: 0.625rem; }
+  .app-shell main :where(.px-4, .px-6, .px-8) { padding-inline: 0.625rem; }
+  .app-shell main :where(.py-3, .py-4, .py-6, .py-8, .py-10) { padding-block: 0.5rem; }
+  .app-shell main :where(.mb-4, .mb-6) { margin-bottom: 0.75rem; }
+  .app-shell main :where(.gap-3, .gap-4, .gap-6) { gap: 0.5rem; }
+  .app-shell main :where(.space-y-4, .space-y-10) > :not(:last-child) { margin-block-end: 0.75rem; }
+  .app-shell main .grid:has(> .stat) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page-actions > :where(input, button, a) { width: 100%; min-width: 0; }
+  .page-actions > :where(button, a) { white-space: normal; }
+  .page-actions:has(> input[type="date"]):has(> button[aria-label="Dia anterior"]) {
+    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  }
+  .page-actions:has(> button[aria-label="Dia anterior"]) > :nth-child(4) { grid-column: 1 / 2; width: auto; }
+  .page-actions:has(> button[aria-label="Dia anterior"]) > :last-child { grid-column: 2 / 4; }
+  .app-shell :where(button, a)[data-slot="button"],
+  .app-shell button.inline-flex { font-size: 0.75rem; gap: 0.25rem; }
+  .app-shell button.inline-flex:not(.w-7):not(.w-9) { padding-inline: 0.5rem; }
+  .app-shell nav a { padding: 0.5rem; gap: 0.5rem; font-size: 0.75rem; }
+  .app-shell nav svg { flex-shrink: 0; }
+  .app-shell main :where(p, span, label) { overflow-wrap: anywhere; }
+  .mobile-table { display: block; }
+  .mobile-table thead { display: none; }
+  .mobile-table tbody { display: block; }
+  .mobile-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.375rem 0.625rem; padding: 0.5rem 0.625rem; }
+  .mobile-table td { display: block; min-width: 0; padding: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; font-size: 0.75rem; }
+  .mobile-table td::before { content: attr(data-label); display: block; font-size: 0.625rem; color: var(--muted-foreground); font-weight: 500; }
+  .mobile-table td[colspan] { grid-column: 1 / -1; }
+  .mobile-table td[data-label="Ações"] { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem; }
+  .mobile-table td[data-label="Ações"]::before { content: none; }
+  .mobile-table td[data-label="Dispositivo"] { max-height: 3rem; overflow-y: auto; }
+  [role="dialog"] { max-width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); overflow-y: auto; padding: 0.875rem; gap: 0.625rem; border-radius: var(--radius); }
+  [role="dialog"] :where(.gap-4) { gap: 0.625rem; }
+  [role="dialog"] :where(.space-y-4) > :not(:last-child) { margin-block-end: 0.625rem; }
+  [role="dialog"] h2 { font-size: 1rem; padding-right: 1.5rem; }
+  [role="dialog"] .dialog-footer { flex-direction: row; justify-content: flex-end; gap: 0.5rem; }
+  input, textarea { font-size: 1rem; }
 }

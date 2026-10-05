@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const nav = [
   { to: "/painel", label: "Painel", icon: LayoutDashboard },
@@ -34,14 +35,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
   return (
-    <div className="min-h-screen bg-background md:flex">
-      <header className="flex items-center justify-between border-b bg-sidebar px-4 py-3 text-sidebar-foreground md:hidden">
+    <div className="app-shell min-h-screen bg-background md:flex">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b bg-sidebar px-3 py-1.5 text-sidebar-foreground md:hidden">
         <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
-        <button onClick={() => setOpen(!open)} aria-label="Menu">{open ? <X /> : <Menu />}</button>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>{open ? <X /> : <Menu />}</Button>
       </header>
       <aside
         className={cn(
-          "w-full flex-col bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:h-screen md:w-60",
+          "w-full shrink-0 flex-col bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:h-screen md:w-60",
           open ? "flex" : "hidden",
         )}
       >
@@ -49,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">Belezi<span className="text-sidebar-primary">.</span></span>
           <p className="text-xs text-sidebar-foreground/60">Sistema de Agendamento Online</p>
         </div>
-        <nav className="flex-1 space-y-0.5 px-3 py-2">
+        <nav className="grid flex-1 grid-cols-2 gap-0.5 px-2 py-1 md:block md:space-y-0.5 md:px-3 md:py-2">
           {nav.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
@@ -69,33 +70,33 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           )}
         </nav>
-        <button onClick={signOut} className="m-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent">
+        <Button variant="ghost" onClick={signOut} className="m-2 justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:m-3">
           <LogOut className="h-4 w-4" /> Sair
-        </button>
+        </Button>
         <p className="px-6 pb-4 text-[10px] leading-tight text-sidebar-foreground/50">Belezi © 2026 · Desenvolvido e comercializado por NEXADASH</p>
       </aside>
-      <main className="flex-1 p-4 md:p-8">{children}</main>
+      <main className="min-w-0 flex-1 p-2.5 md:p-8">{children}</main>
     </div>
   );
 }
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string | undefined; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-semibold">{title}</h1>
+    <div className="page-header mb-3 grid min-w-0 gap-2 sm:mb-6 sm:flex sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+      <div className="min-w-0">
+        <h1 className="text-lg font-semibold sm:text-2xl">{title}</h1>
         {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="page-actions grid min-w-0 grid-cols-2 items-center gap-1.5 sm:flex sm:flex-wrap sm:gap-2">{actions}</div>}
     </div>
   );
 }
 
 export function Stat({ label, value, tone }: { label: string; value: string; tone?: "success" | "destructive" | "primary" }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 font-display text-2xl font-semibold",
+    <div className="stat min-w-0 rounded-lg border bg-card p-2 sm:p-4">
+      <p className="text-[10px] uppercase text-muted-foreground sm:text-xs">{label}</p>
+      <p className={cn("mt-1 break-words font-display text-base font-semibold sm:text-2xl",
         tone === "success" && "text-success", tone === "destructive" && "text-destructive", tone === "primary" && "text-primary")}>{value}</p>
     </div>
   );
