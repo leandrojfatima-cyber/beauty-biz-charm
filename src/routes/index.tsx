@@ -99,7 +99,7 @@ function Index() {
             <h2 className="text-base font-semibold">Escolha o plano ideal para o seu salão.</h2>
           </div>
           <div className="home-offer-actions flex flex-wrap gap-2">
-            <Button asChild size="sm"><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>
+            <Button asChild size="sm"><Button asChild size="sm"><a href={chosen?.payment_url?.trim() || DEFAULT_PAY_URL} target="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>
             <Button asChild size="sm" variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
           </div>
         </div>
