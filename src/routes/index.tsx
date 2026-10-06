@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Receipt, Percent, Package, Wallet, ExternalLink, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
