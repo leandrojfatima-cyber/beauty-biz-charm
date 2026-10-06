@@ -37,7 +37,8 @@ const screenshots = [
   { image: financeiroImage.url, title: "O caixa sempre à vista", label: "03 · Financeiro", description: "Entradas, despesas e saldo do período." },
 ];
 
-type Plan = { id: string; name: string; description: string; price: number; price_max: number | null; highlight: boolean };
+type Plan = { id: string; name: string; description: string; price: number; price_max: number | null; highlight: boolean; payment_url: string | null };
+const DEFAULT_PAY_URL = "https://mpago.la/1i9ivFj";
 
 const priceLabel = (p: Plan) =>
   p.price_max && Number(p.price_max) > Number(p.price) ? `${brl(p.price)} a ${brl(p.price_max)}` : brl(p.price);
@@ -47,7 +48,7 @@ function usePublicPlans() {
     queryKey: ["public-plans"],
     queryFn: async (): Promise<Plan[]> => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any).from("plans").select("id,name,description,price,price_max,highlight").eq("active", true).order("sort_order").order("created_at");
+      const { data, error } = await (supabase as any).from("plans").select("id,name,description,price,price_max,highlight,payment_url").eq("active", true).order("sort_order").order("created_at");
       if (error) throw error;
       return data ?? [];
     },
@@ -98,7 +99,7 @@ function Index() {
             <h2 className="text-base font-semibold">Escolha o plano ideal para o seu salão.</h2>
           </div>
           <div className="home-offer-actions flex flex-wrap gap-2">
-            <Button asChild size="sm"><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>
+            <Button asChild size="sm"><a href={chosen?.payment_url?.trim() || DEFAULT_PAY_URL} target="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>
             <Button asChild size="sm" variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
           </div>
         </div>

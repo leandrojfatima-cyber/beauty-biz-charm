@@ -98,6 +98,7 @@ function PlanRow({ plan, onSave, onDelete }: { plan: any; onSave: (p: any) => vo
   const num = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setP({ ...p, [k]: Number(e.target.value || 0) });
   return (
     <div className="grid grid-cols-2 items-end gap-3 rounded-lg border bg-card p-4 xl:grid-cols-[1fr_2fr_110px_110px_70px_auto_auto_auto]">
+      <label className="col-span-2 text-xs text-muted-foreground xl:col-span-8">Link de pagamento (Mercado Pago)<Input type="url" placeholder="https://mpago.la/..." value={p.payment_url ?? ""} onChange={(e) => setP({ ...p, payment_url: e.target.value.trim() || null })} /></label>
       <label className="col-span-2 text-xs text-muted-foreground xl:col-span-1">Nome<Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} /></label>
       <label className="col-span-2 text-xs text-muted-foreground xl:col-span-1">Descrição<Input value={p.description ?? ""} onChange={(e) => setP({ ...p, description: e.target.value })} /></label>
       <label className="text-xs text-muted-foreground">Valor mensal (R$)<Input type="number" step="0.01" value={p.price} onChange={num("price")} /></label>
