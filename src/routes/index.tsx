@@ -55,6 +55,8 @@ function usePublicPlans() {
 
 function Index() {
   const { data: plans = [] } = usePublicPlans();
+  const [selected, setSelected] = useState<string | null>(null);
+  const chosen = plans.find((x) => x.id === selected) ?? plans.find((x) => x.highlight) ?? plans[0];
   return (
     <div className="belezi-home bg-background">
       <header className="home-header flex items-center justify-between gap-3 border-b">
@@ -95,21 +97,23 @@ function Index() {
             <h2 className="text-base font-semibold">Escolha o plano ideal para o seu salão.</h2>
           </div>
           <div className="home-offer-actions flex flex-wrap gap-2">
-            <Button asChild size="sm"><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">Comprar pelo Mercado Pago <ExternalLink className="h-3.5 w-3.5" /></a></Button>
+            <Button asChild size="sm"><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">{chosen ? `Assinar ${chosen.name}` : "Comprar pelo Mercado Pago"} <ExternalLink className="h-3.5 w-3.5" /></a></Button>
             <Button asChild size="sm" variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
           </div>
         </div>
-        <div className="home-plans">
-          {plans.map((p) => (
-            <div key={p.id} className={`home-plan rounded-lg border bg-card text-card-foreground ${p.highlight ? "border-primary ring-1 ring-primary" : ""}`}>
+        <div className="home-plans" role="radiogroup" aria-label="Planos">
+          {plans.map((p) => {
+            const isSel = (selected ?? plans.find((x) => x.highlight)?.id ?? plans[0]?.id) === p.id;
+            return (
+            <button type="button" role="radio" aria-checked={isSel} onClick={() => setSelected(p.id)} key={p.id} className={`home-plan cursor-pointer rounded-lg border bg-card text-left text-card-foreground transition hover:border-primary ${isSel ? "border-primary ring-2 ring-primary" : ""}`}>
               <div className="flex items-center justify-between gap-1">
                 <p className="truncate text-xs font-semibold">{p.name}</p>
-                {p.highlight && <span className="rounded bg-primary px-1 text-[9px] font-semibold uppercase text-primary-foreground">Popular</span>}
+                {isSel ? <span className="rounded bg-primary px-1 text-[9px] font-semibold uppercase text-primary-foreground">Escolhido</span> : p.highlight && <span className="rounded border border-primary px-1 text-[9px] font-semibold uppercase text-primary">Popular</span>}
               </div>
               <p className="font-display text-base font-semibold leading-tight">{priceLabel(p)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></p>
               <p className="home-plan-desc text-[10px] text-muted-foreground">{p.description}</p>
-            </div>
-          ))}
+            </button>
+          );})}
         </div>
       </section>
       <footer className="home-footer text-[10px] text-muted-foreground">Belezi © 2026 · Desenvolvido e comercializado por NEXADASH</footer>
