@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, Receipt, Percent, Package, Wallet, ExternalLink, Check } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { brl } from "@/lib/db";
 import painelImage from "@/assets/belezi-painel-demo.jpg.asset.json";
 import agendaImage from "@/assets/belezi-agenda-demo.jpg.asset.json";
 import financeiroImage from "@/assets/belezi-financeiro-demo.jpg.asset.json";
@@ -33,7 +36,25 @@ const screenshots = [
   { image: financeiroImage.url, title: "O caixa sempre à vista", label: "03 · Financeiro", description: "Entradas, despesas e saldo do período." },
 ];
 
+type Plan = { id: string; name: string; description: string; price: number; price_max: number | null; highlight: boolean };
+
+const priceLabel = (p: Plan) =>
+  p.price_max && Number(p.price_max) > Number(p.price) ? `${brl(p.price)} a ${brl(p.price_max)}` : brl(p.price);
+
+function usePublicPlans() {
+  return useQuery({
+    queryKey: ["public-plans"],
+    queryFn: async (): Promise<Plan[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).from("plans").select("id,name,description,price,price_max,highlight").eq("active", true).order("sort_order").order("created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 function Index() {
+  const { data: plans = [] } = usePublicPlans();
   return (
     <div className="belezi-home bg-background">
       <header className="home-header flex items-center justify-between gap-3 border-b">
@@ -67,18 +88,28 @@ function Index() {
           ))}
         </div>
       </section>
-      <section className="home-offer border-y border-primary/20 bg-accent text-accent-foreground" aria-label="Venda do sistema Belezi">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase text-primary">Belezi para o seu negócio</p>
-          <h2 className="mt-1 text-lg font-semibold">Leve o Belezi para o seu salão.</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-xs"><Check className="h-3.5 w-3.5 shrink-0" />Do agendamento ao fechamento da comanda.</p>
-        </div>
-        <div className="home-offer-actions">
-          <div className="flex flex-wrap gap-2">
-            <Button asChild><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">Comprar pelo Mercado Pago <ExternalLink className="h-3.5 w-3.5" /></a></Button>
-            <Button asChild variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
+      <section className="home-offer border-y border-primary/20 bg-accent text-accent-foreground" aria-label="Planos do sistema Belezi">
+        <div className="home-offer-head">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase text-primary">Belezi para o seu negócio</p>
+            <h2 className="text-base font-semibold">Escolha o plano ideal para o seu salão.</h2>
           </div>
-          <p className="mt-1.5 text-[10px] text-muted-foreground">Confira os valores e as condições na página de pagamento.</p>
+          <div className="home-offer-actions flex flex-wrap gap-2">
+            <Button asChild size="sm"><a href="https://mpago.la/1i9ivFj" target="_blank" rel="noopener noreferrer">Comprar pelo Mercado Pago <ExternalLink className="h-3.5 w-3.5" /></a></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/painel">Acessar o sistema <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
+          </div>
+        </div>
+        <div className="home-plans">
+          {plans.map((p) => (
+            <div key={p.id} className={`home-plan rounded-lg border bg-card text-card-foreground ${p.highlight ? "border-primary ring-1 ring-primary" : ""}`}>
+              <div className="flex items-center justify-between gap-1">
+                <p className="truncate text-xs font-semibold">{p.name}</p>
+                {p.highlight && <span className="rounded bg-primary px-1 text-[9px] font-semibold uppercase text-primary-foreground">Popular</span>}
+              </div>
+              <p className="font-display text-base font-semibold leading-tight">{priceLabel(p)}<span className="text-[10px] font-normal text-muted-foreground">/mês</span></p>
+              <p className="home-plan-desc text-[10px] text-muted-foreground">{p.description}</p>
+            </div>
+          ))}
         </div>
       </section>
       <footer className="home-footer text-[10px] text-muted-foreground">Belezi © 2026 · Desenvolvido e comercializado por NEXADASH</footer>

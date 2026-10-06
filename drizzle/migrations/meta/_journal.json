@@ -15,6 +15,13 @@
       "when": 1791030423240,
       "tag": "0001_salon_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791257668443,
+      "tag": "0002_plans_monthly_tiers",
+      "breakpoints": true
     }
   ]
 }

@@ -27,7 +27,7 @@ function MasterPage() {
   });
   const { data: plans = [] } = useQuery({
     queryKey: ["plans"], enabled: !!isMaster,
-    queryFn: async () => { const { data, error } = await db.from("plans").select("*").order("created_at"); if (error) throw error; return data; },
+    queryFn: async () => { const { data, error } = await db.from("plans").select("*").order("sort_order").order("created_at"); if (error) throw error; return data; },
   });
   const [filter, setFilter] = useState("");
   const refresh = () => qc.invalidateQueries({ queryKey: ["plans"] });
@@ -38,12 +38,12 @@ function MasterPage() {
       const { id, created_at, ...patch } = p;
       const { error } = await db.from("plans").update(patch).eq("id", id);
       if (error) throw error;
-      await logAudit("Alterou plano de venda", `${p.name}: ${brl(p.price)} ou ${p.installments}x ${brl(p.installment_price)}${p.optional ? " (opcional)" : ""}${p.active ? "" : " (inativo)"}`);
+      await logAudit("Alterou plano de venda", `${p.name}: ${brl(p.price)}/mês${p.price_max ? ` a ${brl(p.price_max)}` : ""}${p.highlight ? " (destaque)" : ""}${p.active ? "" : " (inativo)"}`);
     },
     onSuccess: () => { refresh(); toast.success("Plano salvo"); }, onError: err,
   });
   const add = useMutation({
-    mutationFn: async () => { const { error } = await db.from("plans").insert({ name: "Novo plano" }); if (error) throw error; await logAudit("Criou plano de venda"); },
+    mutationFn: async () => { const { error } = await db.from("plans").insert({ name: "Novo plano", sort_order: plans.length + 1 }); if (error) throw error; await logAudit("Criou plano de venda"); },
     onSuccess: refresh, onError: err,
   });
   const del = useMutation({
@@ -59,7 +59,7 @@ function MasterPage() {
   return (
     <div className="space-y-10">
       <section>
-        <PageHeader title="Valores de venda" subtitle="Planos oferecidos aos donos de salão. Marque como opcional e escolha os valores."
+        <PageHeader title="Valores de venda" subtitle="Planos mensais exibidos na página inicial. Altere os valores quando quiser."
           actions={<Button onClick={() => add.mutate()}><Plus className="mr-1 h-4 w-4" />Novo plano</Button>} />
         <div className="space-y-3">
           {plans.length === 0 && <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhum plano cadastrado.</p>}
@@ -97,12 +97,13 @@ function PlanRow({ plan, onSave, onDelete }: { plan: any; onSave: (p: any) => vo
   const [p, setP] = useState(plan);
   const num = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setP({ ...p, [k]: Number(e.target.value || 0) });
   return (
-    <div className="grid grid-cols-2 items-end gap-3 rounded-lg border bg-card p-4 xl:grid-cols-[1fr_120px_90px_120px_auto_auto_auto]">
+    <div className="grid grid-cols-2 items-end gap-3 rounded-lg border bg-card p-4 xl:grid-cols-[1fr_2fr_110px_110px_70px_auto_auto_auto]">
       <label className="col-span-2 text-xs text-muted-foreground xl:col-span-1">Nome<Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} /></label>
-      <label className="text-xs text-muted-foreground">À vista (R$)<Input type="number" step="0.01" value={p.price} onChange={num("price")} /></label>
-      <label className="text-xs text-muted-foreground">Parcelas<Input type="number" min="1" value={p.installments} onChange={num("installments")} /></label>
-      <label className="text-xs text-muted-foreground">Valor parcela<Input type="number" step="0.01" value={p.installment_price} onChange={num("installment_price")} /></label>
-      <label className="flex items-center gap-2 pb-2 text-sm"><Switch checked={p.optional} onCheckedChange={(v) => setP({ ...p, optional: v })} />Opcional</label>
+      <label className="col-span-2 text-xs text-muted-foreground xl:col-span-1">Descrição<Input value={p.description ?? ""} onChange={(e) => setP({ ...p, description: e.target.value })} /></label>
+      <label className="text-xs text-muted-foreground">Valor mensal (R$)<Input type="number" step="0.01" value={p.price} onChange={num("price")} /></label>
+      <label className="text-xs text-muted-foreground">Até (R$, opcional)<Input type="number" step="0.01" value={p.price_max ?? ""} onChange={(e) => setP({ ...p, price_max: e.target.value === "" ? null : Number(e.target.value) })} /></label>
+      <label className="text-xs text-muted-foreground">Ordem<Input type="number" min="0" value={p.sort_order} onChange={num("sort_order")} /></label>
+      <label className="flex items-center gap-2 pb-2 text-sm"><Switch checked={p.highlight} onCheckedChange={(v) => setP({ ...p, highlight: v })} />Destaque</label>
       <label className="flex items-center gap-2 pb-2 text-sm"><Switch checked={p.active} onCheckedChange={(v) => setP({ ...p, active: v })} />Ativo</label>
       <div className="flex gap-1"><Button onClick={() => onSave(p)}>Salvar</Button><Button variant="ghost" size="icon" onClick={onDelete}><Trash2 className="h-4 w-4 text-destructive" /></Button></div>
     </div>
