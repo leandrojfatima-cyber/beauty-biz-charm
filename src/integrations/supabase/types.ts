@@ -274,6 +274,7 @@ export type Database = {
           installments: number
           name: string
           optional: boolean
+          payment_url: string | null
           price: number
           price_max: number | null
           sort_order: number
@@ -288,6 +289,7 @@ export type Database = {
           installments?: number
           name: string
           optional?: boolean
+          payment_url?: string | null
           price?: number
           price_max?: number | null
           sort_order?: number
@@ -302,6 +304,7 @@ export type Database = {
           installments?: number
           name?: string
           optional?: boolean
+          payment_url?: string | null
           price?: number
           price_max?: number | null
           sort_order?: number
