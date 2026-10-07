@@ -62,7 +62,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-lg border bg-card p-4 sm:p-8">
-        <h1 className="text-2xl font-semibold">Belezi<span className="text-primary">.</span></h1>
+        <Link to="/" className="inline-block text-2xl font-semibold">Belezi<span className="text-primary">.</span></Link>
         <p className="mb-6 text-sm text-muted-foreground">{mode === "in" ? "Entre na sua conta" : "Crie a conta do salão"}</p>
         <form onSubmit={submit} className="space-y-4">
           <div><Label className="mb-1.5 block">E-mail</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
