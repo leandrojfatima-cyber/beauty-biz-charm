@@ -19,3 +19,4 @@
 - Audit trail rows are written client-side via `logAudit` into `audit_logs` (insert-own, master-read) — keeps logging simple without server functions.
 - Keep mobile density in the shared AppShell and mobile CSS; tables use mobile-table with data-label cells to retain every field without horizontal scrolling.
 - Public home screenshots use browser-intercepted fictional data and CDN asset pointers, never live customer records; desktop viewport sizing is scoped to the public home so authenticated screens retain their layout.
+- The public home route `/` never redirects or navigates on load (signed in or not); `src/routes/home-no-redirect.test.ts` guards this — customers share and bookmark the root address.
