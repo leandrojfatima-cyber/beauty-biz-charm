@@ -1,0 +1,1 @@
+- [Import setup constraints](import-setup.md) — preserve the imported backend; npm peer resolution needs compatibility mode.

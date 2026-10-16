@@ -49,19 +49,19 @@ const features = [
 
 const screenshots = [
   {
-    image: painelImage.url,
+    image: new URL(painelImage.url, "https://beauty-biz-charm.lovable.app").href,
     title: "Seu salão em um só lugar",
     label: "01 · Painel",
     description: "Agenda do dia, receitas e estoque.",
   },
   {
-    image: agendaImage.url,
+    image: new URL(agendaImage.url, "https://beauty-biz-charm.lovable.app").href,
     title: "Cada horário organizado",
     label: "02 · Agenda",
     description: "Atendimentos separados por profissional.",
   },
   {
-    image: financeiroImage.url,
+    image: new URL(financeiroImage.url, "https://beauty-biz-charm.lovable.app").href,
     title: "O caixa sempre à vista",
     label: "03 · Financeiro",
     description: "Entradas, despesas e saldo do período.",
