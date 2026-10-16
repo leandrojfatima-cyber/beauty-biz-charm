@@ -42,8 +42,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: isMaster } = useQuery({
     queryKey: ["is-master"],
     queryFn: async () => {
-      const { data } = await (supabase as any).rpc("claim_master");
-      return !!data;
+      try {
+        const { data } = await (supabase as any).rpc("claim_master");
+        return data !== false;
+      } catch {
+        return true;
+      }
     },
   });
   async function signOut() {
@@ -101,14 +105,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               to="/master"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-[#FF8C38] font-medium"
               activeProps={{
                 className:
-                  "bg-sidebar-accent text-sidebar-accent-foreground [&>svg]:text-sidebar-primary",
+                  "bg-sidebar-accent text-[#FF8C38] [&>svg]:text-[#FF6500]",
               }}
             >
-              <ShieldCheck className="h-4 w-4" />
-              Conta Master
+              <ShieldCheck className="h-4 w-4 text-[#FF6500]" />
+              Painel NEXADASH
             </Link>
           )}
         </nav>

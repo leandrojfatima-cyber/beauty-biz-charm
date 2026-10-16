@@ -308,3 +308,169 @@ SELECT v.* FROM (VALUES
   ('NEXADASH BUSINESS', 'Para empresas maiores: usuários adicionais, personalização, suporte e módulos específicos.', 199.00, 299.00, 1, 0, false, true, false, 4, 'https://mpago.la/1i9ivFj')
 ) AS v(name, description, price, price_max, installments, installment_price, optional, active, highlight, sort_order, payment_url)
 WHERE NOT EXISTS (SELECT 1 FROM public.plans);
+
+-- 6. NEXADASH COMMERCIAL HUB & B2B SUBSCRIPTIONS (ETAPAS 3 E 4)
+CREATE TABLE IF NOT EXISTS public.nexadash_leads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  company_name text NOT NULL,
+  phone text,
+  email text,
+  city text,
+  stage text NOT NULL DEFAULT 'novo' CHECK (stage IN ('novo', 'contato', 'demo', 'proposta', 'negociacao', 'ganho', 'perdido')),
+  plan_interest text DEFAULT 'NEXADASH PRO',
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_customers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid REFERENCES public.nexadash_leads(id) ON DELETE SET NULL,
+  company_name text NOT NULL,
+  contact_name text NOT NULL,
+  phone text,
+  email text,
+  document text,
+  plan_name text NOT NULL DEFAULT 'NEXADASH PRO',
+  monthly_price numeric(10,2) NOT NULL DEFAULT 59.90,
+  status text NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'trial', 'inadimplente', 'cancelado')),
+  started_at date NOT NULL DEFAULT current_date,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_proposals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid REFERENCES public.nexadash_leads(id) ON DELETE CASCADE,
+  customer_id uuid REFERENCES public.nexadash_customers(id) ON DELETE SET NULL,
+  title text NOT NULL,
+  plan_name text NOT NULL,
+  price numeric(10,2) NOT NULL,
+  discount numeric(10,2) NOT NULL DEFAULT 0,
+  conditions text,
+  status text NOT NULL DEFAULT 'enviada' CHECK (status IN ('enviada', 'aceita', 'recusada', 'cancelada')),
+  valid_until date,
+  payment_link text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_interactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id uuid REFERENCES public.nexadash_leads(id) ON DELETE CASCADE,
+  customer_id uuid REFERENCES public.nexadash_customers(id) ON DELETE CASCADE,
+  channel text NOT NULL DEFAULT 'whatsapp' CHECK (channel IN ('whatsapp', 'ligacao', 'reuniao', 'email')),
+  summary text NOT NULL,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_support_onboarding (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id uuid NOT NULL REFERENCES public.nexadash_customers(id) ON DELETE CASCADE,
+  type text NOT NULL DEFAULT 'implantacao' CHECK (type IN ('implantacao', 'suporte', 'consultoria')),
+  title text NOT NULL,
+  status text NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'em_andamento', 'concluido')),
+  priority text NOT NULL DEFAULT 'media' CHECK (priority IN ('baixa', 'media', 'alta')),
+  description text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id uuid NOT NULL REFERENCES public.nexadash_customers(id) ON DELETE CASCADE,
+  plan_id uuid REFERENCES public.plans(id) ON DELETE SET NULL,
+  plan_name text NOT NULL DEFAULT 'NEXADASH PRO',
+  billing_cycle text NOT NULL DEFAULT 'mensal' CHECK (billing_cycle IN ('mensal', 'trimestral', 'semestral', 'anual')),
+  contracted_price numeric(10,2) NOT NULL DEFAULT 59.90,
+  special_conditions text,
+  features text,
+  started_at date NOT NULL DEFAULT current_date,
+  valid_until date NOT NULL,
+  status text NOT NULL DEFAULT 'ativa' CHECK (status IN ('ativa', 'trial', 'suspensa', 'cancelada', 'encerrada')),
+  next_due_date date NOT NULL,
+  cancellation_reason text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.nexadash_invoices (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  subscription_id uuid REFERENCES public.nexadash_subscriptions(id) ON DELETE CASCADE,
+  customer_id uuid NOT NULL REFERENCES public.nexadash_customers(id) ON DELETE CASCADE,
+  invoice_number text NOT NULL,
+  amount numeric(10,2) NOT NULL,
+  due_date date NOT NULL,
+  status text NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'recebido', 'vencido', 'cancelado')),
+  payment_method text,
+  paid_at timestamptz,
+  confirmation_notes text,
+  payment_link text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+DO $$
+DECLARE
+  t text;
+BEGIN
+  FOR t IN ARRAY ARRAY['nexadash_leads', 'nexadash_customers', 'nexadash_proposals', 'nexadash_interactions', 'nexadash_support_onboarding', 'nexadash_subscriptions', 'nexadash_invoices'] LOOP
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', t);
+    EXECUTE format('GRANT ALL ON public.%I TO service_role', t);
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('DROP POLICY IF EXISTS "master_exclusive_%I" ON public.%I', t, t);
+    EXECUTE format('CREATE POLICY "master_exclusive_%I" ON public.%I FOR ALL TO authenticated USING (public.has_role(auth.uid(), ''master'')) WITH CHECK (public.has_role(auth.uid(), ''master''))', t, t);
+  END LOOP;
+END $$;
+
+-- 7. NEXADASH LIBERAÇÃO MANUAL DE ACESSO & GOVERNANÇA DE ATIVAÇÃO (ETAPA 5)
+ALTER TABLE public.salon_settings
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'aguardando_liberacao'
+    CHECK (status IN ('aguardando_liberacao', 'ativa', 'suspensa_manual', 'cancelada')),
+  ADD COLUMN IF NOT EXISTS plan_name text NOT NULL DEFAULT 'NEXADASH PRO',
+  ADD COLUMN IF NOT EXISTS contract_valid_until date,
+  ADD COLUMN IF NOT EXISTS activated_at timestamptz,
+  ADD COLUMN IF NOT EXISTS activated_by text,
+  ADD COLUMN IF NOT EXISTS activation_notes text,
+  ADD COLUMN IF NOT EXISTS suspended_at timestamptz,
+  ADD COLUMN IF NOT EXISTS suspended_by text,
+  ADD COLUMN IF NOT EXISTS suspension_reason text;
+
+CREATE TABLE IF NOT EXISTS public.nexadash_account_activations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id uuid REFERENCES public.nexadash_customers(id) ON DELETE SET NULL,
+  salon_id uuid REFERENCES public.salon_settings(id) ON DELETE CASCADE,
+  subscription_id uuid REFERENCES public.nexadash_subscriptions(id) ON DELETE SET NULL,
+  company_name text NOT NULL,
+  owner_email text NOT NULL,
+  phone text,
+  city text,
+  plan_name text NOT NULL DEFAULT 'NEXADASH PRO',
+  contracted_value numeric(10,2) NOT NULL DEFAULT 59.90,
+  billing_cycle text NOT NULL DEFAULT 'mensal',
+  valid_until date NOT NULL,
+  conditions_verified boolean NOT NULL DEFAULT false,
+  conditions_verified_at timestamptz,
+  conditions_notes text,
+  payment_status text NOT NULL DEFAULT 'pendente' CHECK (payment_status IN ('pendente', 'em_analise', 'pago_confirmado', 'isento_cortesia')),
+  payment_method text,
+  payment_reference text,
+  payment_confirmed_at timestamptz,
+  account_prepared boolean NOT NULL DEFAULT false,
+  account_prepared_at timestamptz,
+  account_preparation_notes text,
+  activation_status text NOT NULL DEFAULT 'pendente_liberacao_manual' CHECK (activation_status IN ('pendente_liberacao_manual', 'autorizado_ativo', 'suspenso_manual', 'recusado')),
+  authorized_by_admin text,
+  authorized_at timestamptz,
+  deliberation_notes text,
+  suspension_reason text,
+  suspended_by_admin text,
+  suspended_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.nexadash_account_activations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "master_manage_activations" ON public.nexadash_account_activations;
+CREATE POLICY "master_manage_activations" ON public.nexadash_account_activations FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'master')) WITH CHECK (public.has_role(auth.uid(), 'master'));
+DROP POLICY IF EXISTS "salon_view_own_activation" ON public.nexadash_account_activations;
+CREATE POLICY "salon_view_own_activation" ON public.nexadash_account_activations FOR SELECT TO authenticated USING (owner_email = (SELECT email FROM auth.users WHERE id = auth.uid()) OR salon_id IN (SELECT id FROM public.salon_settings WHERE owner_id = auth.uid()));
+

@@ -1,0 +1,8 @@
+{
+  "name": "BELEZI & NEXADASH",
+  "description": "Sistema integrado multiempresa para barbearias e salões (BELEZI) com Command Center comercial B2B, gestão de assinaturas, CRM e faturamento (NEXADASH).",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ],
+  "permissions": []
+}

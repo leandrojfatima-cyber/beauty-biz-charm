@@ -37,12 +37,22 @@
     "salon_settings",
     "user_roles",
     "audit_logs",
-    "plans"
+    "plans",
+    "nexadash_leads",
+    "nexadash_customers",
+    "nexadash_proposals",
+    "nexadash_interactions",
+    "nexadash_support_onboarding",
+    "nexadash_subscriptions",
+    "nexadash_invoices",
+    "nexadash_account_activations"
   ],
   "stored_procedures": [
     "apply_stock_movement",
     "close_order",
     "has_role",
-    "claim_master"
+    "claim_master",
+    "manual_authorize_salon_activation",
+    "manual_suspend_salon_access"
   ]
 }
