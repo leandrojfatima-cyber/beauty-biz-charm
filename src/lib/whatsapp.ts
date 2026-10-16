@@ -10,7 +10,11 @@ export const useSalon = () =>
     queryFn: async (): Promise<Salon> => {
       const { data, error } = await db.from("salon_settings").select("*").maybeSingle();
       if (error) throw error;
-      return { name: data?.name ?? "", address: data?.address ?? "", maps_link: data?.maps_link ?? "" };
+      return {
+        name: data?.name ?? "",
+        address: data?.address ?? "",
+        maps_link: data?.maps_link ?? "",
+      };
     },
   });
 
@@ -35,7 +39,9 @@ export type MsgCtx = {
 };
 
 function addressBlock(s: Salon) {
-  const lines = [s.address && `📍 ${s.address}`, s.maps_link && `🗺️ ${s.maps_link}`].filter(Boolean);
+  const lines = [s.address && `📍 ${s.address}`, s.maps_link && `🗺️ ${s.maps_link}`].filter(
+    Boolean,
+  );
   return lines.length ? lines.join("\n") : "";
 }
 
@@ -56,7 +62,9 @@ export function buildMessage(kind: MsgKind, c: MsgCtx) {
       what && `💇 ${what}`,
       addr,
       "Pode confirmar sua presença respondendo SIM? Se precisar remarcar, é só avisar. 💛",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
   if (kind === "lembrete")
     return [
@@ -66,7 +74,9 @@ export function buildMessage(kind: MsgKind, c: MsgCtx) {
       what && `💇 ${what}`,
       addr,
       "Aguardamos você! Qualquer imprevisto, nos avise com antecedência. 💛",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
   return [
     hi,

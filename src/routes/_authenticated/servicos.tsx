@@ -10,9 +10,22 @@ const CATS = [
 ];
 
 export const Route = createFileRoute("/_authenticated/servicos")({
-  head: () => ({ meta: [{ title: "Serviços — Belezi" }, { name: "description", content: "Gerencie serviços do seu salão no Belezi." }, { property: "og:title", content: "Serviços — Belezi" }, { property: "og:description", content: "Gerencie serviços do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Serviços — Belezi" },
+      { name: "description", content: "Gerencie serviços do seu salão no Belezi." },
+      { property: "og:title", content: "Serviços — Belezi" },
+      { property: "og:description", content: "Gerencie serviços do seu salão no Belezi." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: () => (
-    <CrudPage table="services" title="Serviços" subtitle="Preço, duração e comissão de cada serviço." singular="serviço"
+    <CrudPage
+      table="services"
+      title="Serviços"
+      subtitle="Preço, duração e comissão de cada serviço."
+      singular="serviço"
       fields={[
         { key: "name", label: "Nome", required: true },
         { key: "category", label: "Categoria", type: "select", options: CATS, default: "cabelo" },
@@ -23,10 +36,17 @@ export const Route = createFileRoute("/_authenticated/servicos")({
       ]}
       columns={[
         { label: "Serviço", render: (r) => <span className="font-medium">{r.name}</span> },
-        { label: "Categoria", render: (r) => CATS.find((c) => c.value === r.category)?.label ?? r.category },
+        {
+          label: "Categoria",
+          render: (r) => CATS.find((c) => c.value === r.category)?.label ?? r.category,
+        },
         { label: "Duração", render: (r) => `${r.duration_min} min` },
         { label: "Preço", render: (r) => brl(r.price), className: "text-right" },
-        { label: "Comissão", render: (r) => `${Number(r.commission_pct)}%`, className: "text-right" },
+        {
+          label: "Comissão",
+          render: (r) => `${Number(r.commission_pct)}%`,
+          className: "text-right",
+        },
       ]}
     />
   ),

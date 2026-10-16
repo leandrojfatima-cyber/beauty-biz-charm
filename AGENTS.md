@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -7,9 +8,11 @@
 >
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
+
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+
 - Single-salon-per-account: every table has `owner_id default auth.uid()` with owner-only RLS — keeps each signed-in account's data isolated without a roles system.
 - App screens live under `src/routes/_authenticated/` and query the database from the browser client via TanStack Query (`src/lib/db.ts`) — RLS is the security boundary, so no server functions are needed for CRUD.
 - Closing a comanda goes through the `close_order` database function — keeps total, revenue entry, stock deduction and appointment completion atomic.

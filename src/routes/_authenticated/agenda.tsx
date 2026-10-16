@@ -9,14 +9,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { db, fmtTime, todayISO } from "@/lib/db";
 import { openOrder, useClients, useProfessionals, useServices } from "@/lib/lookups";
 import { cn } from "@/lib/utils";
 import { Pick } from "@/components/Pick";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
-  head: () => ({ meta: [{ title: "Agenda — Belezi" }, { name: "description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:title", content: "Agenda — Belezi" }, { property: "og:description", content: "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Agenda — Belezi" },
+      {
+        name: "description",
+        content:
+          "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi.",
+      },
+      { property: "og:title", content: "Agenda — Belezi" },
+      {
+        property: "og:description",
+        content:
+          "Organize horários e mensagens de confirmação dos agendamentos do seu salão no Belezi.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: AgendaPage,
 });
 
@@ -40,7 +63,12 @@ function AgendaPage() {
     queryFn: async () => {
       const start = new Date(date + "T00:00:00").toISOString();
       const end = new Date(date + "T23:59:59").toISOString();
-      const { data, error } = await db.from("appointments").select("*").gte("starts_at", start).lte("starts_at", end).order("starts_at");
+      const { data, error } = await db
+        .from("appointments")
+        .select("*")
+        .gte("starts_at", start)
+        .lte("starts_at", end)
+        .order("starts_at");
       if (error) throw error;
       return data;
     },
@@ -54,16 +82,27 @@ function AgendaPage() {
       const starts = new Date(`${date}T${form.time}:00`);
       const ends = new Date(starts.getTime() + (s?.duration_min ?? 60) * 60000);
       const { error } = await db.from("appointments").insert({
-        client_id: form.client_id || null, professional_id: form.professional_id, service_id: form.service_id || null,
-        starts_at: starts.toISOString(), ends_at: ends.toISOString(), notes: form.notes || null,
+        client_id: form.client_id || null,
+        professional_id: form.professional_id,
+        service_id: form.service_id || null,
+        starts_at: starts.toISOString(),
+        ends_at: ends.toISOString(),
+        notes: form.notes || null,
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); setForm(null); toast.success("Agendado"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["appointments"] });
+      setForm(null);
+      toast.success("Agendado");
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const cancel = useMutation({
-    mutationFn: async (id: string) => { const { error } = await db.from("appointments").update({ status: "cancelado" }).eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => {
+      const { error } = await db.from("appointments").update({ status: "cancelado" }).eq("id", id);
+      if (error) throw error;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments"] }),
   });
   const toOrder = useMutation({
@@ -73,19 +112,60 @@ function AgendaPage() {
   });
 
   const name = (arr: any[], id: string) => arr.find((x) => x.id === id)?.name ?? "—";
-  const label = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const label = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   return (
     <div>
-      <PageHeader title="Agenda" subtitle={label} actions={<>
-        <Button variant="outline" size="icon" aria-label="Dia anterior" onClick={() => setDate(shift(date, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
-        <Button variant="outline" size="icon" aria-label="Próximo dia" onClick={() => setDate(shift(date, 1))}><ChevronRight className="h-4 w-4" /></Button>
-        <Button variant="outline" onClick={() => setDate(todayISO())}>Hoje</Button>
-        <Button onClick={() => setForm({ time: "09:00", professional_id: activePros[0]?.id ?? "" })} disabled={!activePros.length}><Plus className="mr-1 h-4 w-4" />Agendar</Button>
-      </>} />
+      <PageHeader
+        title="Agenda"
+        subtitle={label}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Dia anterior"
+              onClick={() => setDate(shift(date, -1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-40"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Próximo dia"
+              onClick={() => setDate(shift(date, 1))}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setDate(todayISO())}>
+              Hoje
+            </Button>
+            <Button
+              onClick={() => setForm({ time: "09:00", professional_id: activePros[0]?.id ?? "" })}
+              disabled={!activePros.length}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Agendar
+            </Button>
+          </>
+        }
+      />
 
-      {!activePros.length && <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">Cadastre profissionais para começar a agendar.</p>}
+      {!activePros.length && (
+        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+          Cadastre profissionais para começar a agendar.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {activePros.map((p: any) => {
@@ -94,26 +174,69 @@ function AgendaPage() {
             <div key={p.id} className="rounded-lg border bg-card">
               <div className="border-b px-4 py-3">
                 <p className="font-semibold">{p.name}</p>
-                <p className="text-xs capitalize text-muted-foreground">{p.role} · {mine.filter((a: any) => a.status !== "cancelado").length} horários</p>
+                <p className="text-xs capitalize text-muted-foreground">
+                  {p.role} · {mine.filter((a: any) => a.status !== "cancelado").length} horários
+                </p>
               </div>
               <div className="space-y-2 p-3">
-                {mine.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">Livre</p>}
+                {mine.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">Livre</p>
+                )}
                 {mine.map((a: any) => (
-                  <div key={a.id} className={cn("rounded-md border-l-4 bg-muted/40 p-3 text-sm",
-                    a.status === "agendado" && "border-l-primary", a.status === "concluido" && "border-l-success opacity-70", a.status === "cancelado" && "border-l-destructive opacity-50 line-through")}>
+                  <div
+                    key={a.id}
+                    className={cn(
+                      "rounded-md border-l-4 bg-muted/40 p-3 text-sm",
+                      a.status === "agendado" && "border-l-primary",
+                      a.status === "concluido" && "border-l-success opacity-70",
+                      a.status === "cancelado" && "border-l-destructive opacity-50 line-through",
+                    )}
+                  >
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold">{fmtTime(a.starts_at)}–{fmtTime(a.ends_at)}</p>
+                        <p className="font-semibold">
+                          {fmtTime(a.starts_at)}–{fmtTime(a.ends_at)}
+                        </p>
                         <p>{name(clients, a.client_id)}</p>
                         <p className="text-muted-foreground">{name(services, a.service_id)}</p>
                       </div>
                       {a.status === "agendado" && (
                         <div className="flex shrink-0 gap-1 sm:flex-col">
-                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Mensagem no WhatsApp" onClick={() => setWa({
-                            startsAt: a.starts_at, client: clients.find((c: any) => c.id === a.client_id)?.name, phone: clients.find((c: any) => c.id === a.client_id)?.phone,
-                            service: services.find((s: any) => s.id === a.service_id)?.name, professional: p.name })}><MessageCircle className="h-4 w-4 text-success" /></Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Abrir comanda" onClick={() => toOrder.mutate(a)}><Receipt className="h-4 w-4 text-primary" /></Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" title="Cancelar" onClick={() => confirm("Cancelar agendamento?") && cancel.mutate(a.id)}><X className="h-4 w-4 text-destructive" /></Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="Mensagem no WhatsApp"
+                            onClick={() =>
+                              setWa({
+                                startsAt: a.starts_at,
+                                client: clients.find((c: any) => c.id === a.client_id)?.name,
+                                phone: clients.find((c: any) => c.id === a.client_id)?.phone,
+                                service: services.find((s: any) => s.id === a.service_id)?.name,
+                                professional: p.name,
+                              })
+                            }
+                          >
+                            <MessageCircle className="h-4 w-4 text-success" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="Abrir comanda"
+                            onClick={() => toOrder.mutate(a)}
+                          >
+                            <Receipt className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="Cancelar"
+                            onClick={() => confirm("Cancelar agendamento?") && cancel.mutate(a.id)}
+                          >
+                            <X className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -129,18 +252,57 @@ function AgendaPage() {
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Novo agendamento</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Novo agendamento</DialogTitle>
+          </DialogHeader>
           {form && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <Pick label="Profissional" value={form.professional_id} onChange={(v) => setForm({ ...form, professional_id: v })} items={activePros} />
-              <Pick label="Serviço" value={form.service_id} onChange={(v) => setForm({ ...form, service_id: v })} items={services.filter((s: any) => s.active)} />
-              <Pick label="Cliente" value={form.client_id} onChange={(v) => setForm({ ...form, client_id: v })} items={clients} />
-              <div><Label className="mb-1.5 block">Horário</Label><Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></div>
-              <div className="sm:col-span-2"><Label className="mb-1.5 block">Observações</Label><Textarea value={form.notes ?? ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+              <Pick
+                label="Profissional"
+                value={form.professional_id}
+                onChange={(v) => setForm({ ...form, professional_id: v })}
+                items={activePros}
+              />
+              <Pick
+                label="Serviço"
+                value={form.service_id}
+                onChange={(v) => setForm({ ...form, service_id: v })}
+                items={services.filter((s: any) => s.active)}
+              />
+              <Pick
+                label="Cliente"
+                value={form.client_id}
+                onChange={(v) => setForm({ ...form, client_id: v })}
+                items={clients}
+              />
+              <div>
+                <Label className="mb-1.5 block">Horário</Label>
+                <Input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => setForm({ ...form, time: e.target.value })}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="mb-1.5 block">Observações</Label>
+                <Textarea
+                  value={form.notes ?? ""}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+              </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
-            <Button onClick={() => save.mutate()} disabled={!form?.professional_id || save.isPending}>Agendar</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => save.mutate()}
+              disabled={!form?.professional_id || save.isPending}
+            >
+              Agendar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -4,7 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db = supabase as any;
 
-export async function list<T = any>(table: string, order = "created_at", ascending = false): Promise<T[]> {
+export async function list<T = any>(
+  table: string,
+  order = "created_at",
+  ascending = false,
+): Promise<T[]> {
   const { data, error } = await db.from(table).select("*").order(order, { ascending });
   if (error) throw error;
   return data ?? [];

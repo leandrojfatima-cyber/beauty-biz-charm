@@ -1,6 +1,7 @@
 # Salão Integrado
 
 App e sistema completo de gestão para salão de cabeleireiro e manicure, com tudo integrado:
+
 - Agendamento de serviços para cabeleireiros e manicures
 - Comandas de atendimento vinculadas aos profissionais
 - Gestão de profissionais (empregados) e cálculo de comissões por serviço e produto

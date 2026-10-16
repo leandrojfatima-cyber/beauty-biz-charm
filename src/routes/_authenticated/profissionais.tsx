@@ -10,9 +10,22 @@ export const ROLES = [
 ];
 
 export const Route = createFileRoute("/_authenticated/profissionais")({
-  head: () => ({ meta: [{ title: "Profissionais — Belezi" }, { name: "description", content: "Gerencie profissionais do seu salão no Belezi." }, { property: "og:title", content: "Profissionais — Belezi" }, { property: "og:description", content: "Gerencie profissionais do seu salão no Belezi." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Profissionais — Belezi" },
+      { name: "description", content: "Gerencie profissionais do seu salão no Belezi." },
+      { property: "og:title", content: "Profissionais — Belezi" },
+      { property: "og:description", content: "Gerencie profissionais do seu salão no Belezi." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: () => (
-    <CrudPage table="professionals" title="Profissionais" subtitle="Equipe do salão. As comissões são definidas em cada serviço e produto." singular="profissional"
+    <CrudPage
+      table="professionals"
+      title="Profissionais"
+      subtitle="Equipe do salão. As comissões são definidas em cada serviço e produto."
+      singular="profissional"
       fields={[
         { key: "name", label: "Nome", required: true },
         { key: "role", label: "Função", type: "select", options: ROLES, default: "cabeleireiro" },
@@ -23,7 +36,14 @@ export const Route = createFileRoute("/_authenticated/profissionais")({
         { label: "Nome", render: (r) => <span className="font-medium">{r.name}</span> },
         { label: "Função", render: (r) => ROLES.find((x) => x.value === r.role)?.label ?? r.role },
         { label: "Telefone", render: (r) => r.phone ?? "—" },
-        { label: "Status", render: (r) => <Badge variant={r.active ? "default" : "secondary"}>{r.active ? "Ativo" : "Inativo"}</Badge> },
+        {
+          label: "Status",
+          render: (r) => (
+            <Badge variant={r.active ? "default" : "secondary"}>
+              {r.active ? "Ativo" : "Inativo"}
+            </Badge>
+          ),
+        },
       ]}
     />
   ),
