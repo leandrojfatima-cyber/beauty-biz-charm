@@ -30,27 +30,27 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+const DEFAULT_SUPABASE_URL = "https://bgnxpwzxjfyhofgggehx.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_Myi5dI_CkCtmUAehmSLytQ_f0rWszTI";
+
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
+  // Use import.meta.env for client-side (Vite build-time static replacement)
+  // Fall back to process.env for SSR/test environments and provided defaults
   const SUPABASE_URL =
-    import.meta.env["VITE_SUPABASE_URL"] ||
-    process.env["SUPABASE_URL"] ||
-    "https://placeholder.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mock";
+    import.meta.env.VITE_SUPABASE_URL ||
+    (typeof process !== "undefined" && process.env?.["SUPABASE_URL"]) ||
+    DEFAULT_SUPABASE_URL;
 
-  if (!import.meta.env["VITE_SUPABASE_URL"] && !process.env["SUPABASE_URL"]) {
-    console.warn(
-      "[Supabase] Missing SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY environment variables. Using placeholder client.",
-    );
-  }
+  const SUPABASE_ANON_KEY =
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" &&
+      (process.env?.["SUPABASE_ANON_KEY"] || process.env?.["SUPABASE_PUBLISHABLE_KEY"])) ||
+    DEFAULT_SUPABASE_ANON_KEY;
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
-      fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
+      fetch: createSupabaseFetch(SUPABASE_ANON_KEY),
     },
     auth: {
       storage: brokeredPreviewStorage(),
