@@ -14,6 +14,12 @@ Until these settings are supplied, the public home renders but authentication an
 
 The public demo screenshots use the existing Lovable site's public asset URLs. They remain hosted there rather than being copied or regenerated.
 
+## Executive dashboard (Etapa 12)
+
+Before using `/painel` with the existing Supabase project, apply `supabase/migrations/20261017260000_executive_dashboard_etapa12.sql`. It adds and backfills `salon_id` on products, orders, and order items; the dashboard filters all operational queries by the signed-in owner's salon. Existing owner-only RLS policies remain in force.
+
+The panel reads realized financial transactions, active client subscriptions, closed orders, appointments, and salon catalogs. Subscription MRR is an estimate from active plan prices normalized to a monthly billing cycle; recognized subscription receipts appear separately when transactions are tagged `source = 'assinatura'`. Retention compares completed-appointment clients with the previous window of equal length.
+
 ## Checks
 
 - `npm test` runs the existing test suite.
