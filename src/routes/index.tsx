@@ -118,11 +118,18 @@ function Index() {
         <span className="hidden text-xs text-muted-foreground sm:block">
           Sistema de Agendamento Online
         </span>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/auth">
-            Entrar <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm">
+            <Link to="/agendar">
+              Agendar Online <CalendarDays className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/auth">
+              Entrar <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
       </header>
       <section className="home-intro">
         <p className="mb-1 text-xs font-medium uppercase text-primary">

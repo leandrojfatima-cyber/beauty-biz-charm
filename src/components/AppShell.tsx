@@ -17,6 +17,7 @@ import {
   X,
   ShieldCheck,
   Store,
+  Smartphone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ const nav = [
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/comissoes", label: "Comissões", icon: Percent },
   { to: "/salao", label: "Configuração da Barbearia", icon: Store },
+  { to: "/agendar", label: "App do Cliente (PWA)", icon: Smartphone },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

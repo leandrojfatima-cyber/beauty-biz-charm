@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6E05E" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#AA7C11" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-opacity="0.3" />
+  
+  <!-- Barber Scissors & Razor Iconography in Safe Zone -->
+  <g transform="translate(256,256) scale(1.1) translate(-256,-256)">
+    <!-- Scissor Blades -->
+    <path d="M180 140 L256 256 L332 140" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M180 372 L256 256 L332 372" stroke="url(#goldGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    
+    <!-- Scissor Finger Rings -->
+    <circle cx="160" cy="380" r="36" stroke="url(#goldGrad)" stroke-width="16" fill="none" />
+    <circle cx="352" cy="380" r="36" stroke="url(#goldGrad)" stroke-width="16" fill="none" />
+    
+    <!-- Center Pivot Pin -->
+    <circle cx="256" cy="256" r="14" fill="url(#goldGrad)" />
+    
+    <!-- Crown / Barber Distinction -->
+    <path d="M216 110 L236 130 L256 95 L276 130 L296 110 L296 140 L216 140 Z" fill="url(#goldGrad)" />
+  </g>
+</svg>
