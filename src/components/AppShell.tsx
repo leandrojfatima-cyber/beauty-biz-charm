@@ -19,6 +19,7 @@ import {
   Store,
   Smartphone,
   Crown,
+  MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const nav = [
   { to: "/comandas", label: "Comandas", icon: Receipt },
   { to: "/clientes", label: "Clientes", icon: UserRound },
   { to: "/planos-assinaturas", label: "Clube & Assinaturas", icon: Crown },
+  { to: "/automacoes", label: "Automações & WhatsApp", icon: MessageCircle },
   { to: "/profissionais", label: "Profissionais", icon: Users },
   { to: "/servicos", label: "Serviços", icon: Scissors },
   { to: "/produtos", label: "Produtos e estoque", icon: Package },

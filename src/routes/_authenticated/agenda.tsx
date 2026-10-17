@@ -395,6 +395,33 @@ function AgendaInteligentePage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Registrar falta (no-show) de cliente com aplicação de regras de penalidade
+  const registerNoShow = useMutation({
+    mutationFn: async ({ clientId, apptId }: { clientId: string; apptId: string }) => {
+      const { data, error } = await db.rpc("register_client_no_show", {
+        _client_id: clientId,
+        _appointment_id: apptId,
+        _reason: "Cliente não compareceu ao horário sem aviso prévio",
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (res: any) => {
+      qc.invalidateQueries({ queryKey: ["appointments"] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      if (res?.is_blocked) {
+        toast.error(
+          `Falta registrada! O cliente ${res?.client_name} atingiu o limite e foi BLOQUEADO para agendamentos online.`,
+        );
+      } else {
+        toast.warning(
+          `Falta registrada para ${res?.client_name} (${res?.new_no_shows_count} falta(s) acumuladas).`,
+        );
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // Filtro de agendamentos visíveis
   const filteredAppts = useMemo(() => {
     return appts.filter((a) => {

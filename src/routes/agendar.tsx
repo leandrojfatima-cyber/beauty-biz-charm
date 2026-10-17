@@ -365,11 +365,16 @@ function ClientBookingPortal() {
 
         const { data: existingClient } = await db
           .from("clients")
-          .select("id, is_vip, vip_plan_name")
+          .select("id, is_vip, vip_plan_name, is_blocked_booking")
           .or(`phone.eq.${cleanPhone},phone.eq.${clientPhone}`)
           .maybeSingle();
 
         if (existingClient) {
+          if (existingClient.is_blocked_booking) {
+            throw new Error(
+              "Seu agendamento online está temporariamente indisponível devido a faltas anteriores. Por favor, fale diretamente com a barbearia pelo WhatsApp.",
+            );
+          }
           clientId = existingClient.id;
           isVip = !!existingClient.is_vip;
           vipPlan = existingClient.vip_plan_name;
