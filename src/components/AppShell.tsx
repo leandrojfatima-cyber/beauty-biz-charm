@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Store,
   Smartphone,
+  Crown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const nav = [
   { to: "/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/comandas", label: "Comandas", icon: Receipt },
   { to: "/clientes", label: "Clientes", icon: UserRound },
+  { to: "/planos-assinaturas", label: "Clube & Assinaturas", icon: Crown },
   { to: "/profissionais", label: "Profissionais", icon: Users },
   { to: "/servicos", label: "Serviços", icon: Scissors },
   { to: "/produtos", label: "Produtos e estoque", icon: Package },

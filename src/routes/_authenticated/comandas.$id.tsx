@@ -39,7 +39,13 @@ export const Route = createFileRoute("/_authenticated/comandas/$id")({
   component: ComandaPage,
 });
 
-const PAY = ["Dinheiro", "Pix", "Cartão de débito", "Cartão de crédito"];
+const PAY = [
+  "Dinheiro",
+  "Pix",
+  "Cartão de débito",
+  "Cartão de crédito",
+  "Assinatura / Clube VIP",
+];
 
 function ComandaPage() {
   const { id } = Route.useParams();

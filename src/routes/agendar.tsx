@@ -56,6 +56,8 @@ import {
 } from "@/lib/agenda-engine";
 import type { SalonSettingsData, ProfessionalData, ServiceData, SalonPhoto } from "@/types/salon";
 import type { AppointmentRecord } from "@/types/agenda";
+import type { SalonClientPlan } from "@/types/subscription";
+import { MODEL_LABELS } from "@/lib/subscription-engine";
 
 export const Route = createFileRoute("/agendar")({
   head: () => ({
@@ -149,6 +151,20 @@ function ClientBookingPortal() {
         .order("name");
       if (error) console.warn("Error loading products:", error);
       return data ?? [];
+    },
+  });
+
+  // 6. Carregar Planos do Clube da Barbearia
+  const { data: clientPlans = [] } = useQuery<SalonClientPlan[]>({
+    queryKey: ["public-client-plans"],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("salon_client_plans")
+        .select("*")
+        .eq("active", true)
+        .order("price", { ascending: true });
+      if (error) console.warn("Error loading plans:", error);
+      return (data ?? []) as SalonClientPlan[];
     },
   });
 
@@ -471,9 +487,21 @@ function ClientBookingPortal() {
         professional_photo: a.professional?.photo_url,
       }));
 
+      // Buscar assinatura ativa do cliente
+      const { data: sub } = await db
+        .from("client_subscriptions")
+        .select(`
+          *,
+          plan:salon_client_plans(*)
+        `)
+        .eq("client_id", client.id)
+        .eq("status", "ativa")
+        .maybeSingle();
+
       return {
         found: true,
         client,
+        subscription: sub || null,
         appointments: mappedAppts,
       };
     },
@@ -1313,6 +1341,41 @@ function ClientBookingPortal() {
                       </CardContent>
                     </Card>
 
+                    {/* Cartão de Assinatura Ativa (Clube da Barbearia) */}
+                    {portalData.subscription && (
+                      <Card className="border-2 border-purple-500/40 bg-purple-500/5">
+                        <CardHeader className="p-4 pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <Crown className="h-4 w-4 text-purple-600" />
+                              <CardTitle className="text-sm font-bold text-foreground">
+                                Assinatura: {portalData.subscription.plan?.name}
+                              </CardTitle>
+                            </div>
+                            <Badge className="bg-purple-600 text-white text-[10px] font-bold">
+                              {MODEL_LABELS[portalData.subscription.plan?.model as keyof typeof MODEL_LABELS]?.label || "Plano"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-1 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Franquia no Ciclo Atual:</span>
+                            <span className="font-bold text-foreground">
+                              {portalData.subscription.plan?.model === "one"
+                                ? `${portalData.subscription.credits_used_this_period} de 1 corte utilizado`
+                                : portalData.subscription.plan?.model === "ilimitado" || portalData.subscription.plan?.model === "vip"
+                                ? "Cortes Ilimitados"
+                                : `${portalData.subscription.credits_used_this_period} de ${portalData.subscription.plan?.monthly_credit_limit} créditos utilizados`}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t">
+                            <span>Próxima Renovação: {fmtDate(portalData.subscription.renews_at)}</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Mensalidade em dia</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     {/* Lista de Agendamentos */}
                     <div className="space-y-3">
                       <h4 className="font-bold text-sm">Seus Agendamentos</h4>
@@ -1422,112 +1485,178 @@ function ClientBookingPortal() {
 
             {/* Planos VIP da Barbearia */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="border bg-card">
-                <CardHeader className="p-5 pb-2">
-                  <Badge variant="outline" className="w-fit text-xs mb-1">
-                    Corte Masculino
-                  </Badge>
-                  <CardTitle className="text-base font-bold">Clube do Cabelo</CardTitle>
-                  <p className="text-2xl font-bold mt-2">
-                    R$ 89<span className="text-xs font-normal text-muted-foreground">/mês</span>
-                  </p>
-                </CardHeader>
-                <CardContent className="p-5 pt-2 space-y-3 text-xs">
-                  <ul className="space-y-1.5 text-muted-foreground">
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> Cortes ilimitados no mês
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> Lavagem e finalização inclusas
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> 10% de desconto em pomadas
-                    </li>
-                  </ul>
-                  <Button
-                    onClick={() => {
-                      toast.success("Fale com o barbeiro na sua próxima visita para ativar!");
-                      setActiveTab("agendar");
-                    }}
-                    className="w-full text-xs"
-                    variant="outline"
-                  >
-                    Quero Assinar
-                  </Button>
-                </CardContent>
-              </Card>
+              {clientPlans.length > 0 ? (
+                clientPlans.map((p) => {
+                  const mInfo = MODEL_LABELS[p.model];
+                  const isVipOrHighlight = p.model === "vip" || p.model === "one";
+                  return (
+                    <Card
+                      key={p.id}
+                      className={`border bg-card flex flex-col justify-between ${
+                        p.model === "vip"
+                          ? "border-2 border-purple-500 bg-purple-500/5 shadow-md"
+                          : p.model === "one"
+                          ? "border-2 border-blue-500/50 bg-blue-500/5"
+                          : ""
+                      }`}
+                    >
+                      <CardHeader className="p-5 pb-2">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <Badge className={`${mInfo.badgeColor} text-[10px]`}>
+                            {mInfo.label}
+                          </Badge>
+                          {p.model === "one" && (
+                            <Badge variant="outline" className="text-[9px] font-bold">
+                              1 corte/mês
+                            </Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-base font-bold">{p.name}</CardTitle>
+                        <p className="text-2xl font-bold mt-2">
+                          {brl(p.price)}
+                          <span className="text-xs font-normal text-muted-foreground">/{p.billing_cycle}</span>
+                        </p>
+                      </CardHeader>
+                      <CardContent className="p-5 pt-2 space-y-3 text-xs flex-1 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-[11px]">{mInfo.description}</p>
+                          {p.benefits && p.benefits.length > 0 && (
+                            <ul className="space-y-1.5 text-foreground">
+                              {p.benefits.map((b, idx) => (
+                                <li key={idx} className="flex items-center gap-1.5 font-medium">
+                                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() => {
+                            toast.success(`Interesse no plano ${p.name} registrado! Fale com seu barbeiro para ativar.`);
+                            setActiveTab("agendar");
+                          }}
+                          className={`w-full text-xs font-bold mt-3 ${
+                            isVipOrHighlight ? "bg-primary text-primary-foreground" : ""
+                          }`}
+                          variant={isVipOrHighlight ? "default" : "outline"}
+                        >
+                          Quero Assinar {p.name}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <>
+                  <Card className="border bg-card">
+                    <CardHeader className="p-5 pb-2">
+                      <Badge className="bg-blue-600 text-white w-fit text-xs mb-1">
+                        Plano One
+                      </Badge>
+                      <CardTitle className="text-base font-bold">Belezi One</CardTitle>
+                      <p className="text-2xl font-bold mt-2">
+                        R$ 59<span className="text-xs font-normal text-muted-foreground">/mês</span>
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-5 pt-2 space-y-3 text-xs">
+                      <ul className="space-y-1.5 text-muted-foreground">
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> Exatamente 1 corte por mês
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> Lavagem e finalização inclusas
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> Renovação automática mensal
+                        </li>
+                      </ul>
+                      <Button
+                        onClick={() => {
+                          toast.success("Solicite ao seu barbeiro para ativar o Plano One!");
+                          setActiveTab("agendar");
+                        }}
+                        className="w-full text-xs"
+                        variant="outline"
+                      >
+                        Quero o Plano One
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-              <Card className="border-2 border-purple-500 bg-purple-500/5 shadow-md relative">
-                <div className="absolute -top-3 right-4 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                  Mais Escolhido
-                </div>
-                <CardHeader className="p-5 pb-2">
-                  <Badge className="bg-purple-600 text-white w-fit text-xs mb-1 font-bold">
-                    Cabelo + Barba
-                  </Badge>
-                  <CardTitle className="text-base font-bold">VIP Black Executive</CardTitle>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-2">
-                    R$ 149<span className="text-xs font-normal text-muted-foreground">/mês</span>
-                  </p>
-                </CardHeader>
-                <CardContent className="p-5 pt-2 space-y-3 text-xs">
-                  <ul className="space-y-1.5 text-foreground">
-                    <li className="flex items-center gap-1.5 font-medium">
-                      <Check className="h-3.5 w-3.5 text-purple-600" /> Cortes e Barbas ilimitados
-                    </li>
-                    <li className="flex items-center gap-1.5 font-medium">
-                      <Check className="h-3.5 w-3.5 text-purple-600" /> Barboterapia com toalha quente
-                    </li>
-                    <li className="flex items-center gap-1.5 font-medium">
-                      <Check className="h-3.5 w-3.5 text-purple-600" /> Encaixe prioritário na agenda
-                    </li>
-                  </ul>
-                  <Button
-                    onClick={() => {
-                      toast.success("Excelente escolha! Solicite ao seu barbeiro.");
-                      setActiveTab("agendar");
-                    }}
-                    className="w-full text-xs bg-purple-600 text-white hover:bg-purple-700 font-bold"
-                  >
-                    Assinar VIP Black
-                  </Button>
-                </CardContent>
-              </Card>
+                  <Card className="border-2 border-purple-500 bg-purple-500/5 shadow-md relative">
+                    <div className="absolute -top-3 right-4 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                      Clube VIP
+                    </div>
+                    <CardHeader className="p-5 pb-2">
+                      <Badge className="bg-purple-600 text-white w-fit text-xs mb-1 font-bold">
+                        Cabelo + Barba
+                      </Badge>
+                      <CardTitle className="text-base font-bold">VIP Black Executive</CardTitle>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+                        R$ 149<span className="text-xs font-normal text-muted-foreground">/mês</span>
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-5 pt-2 space-y-3 text-xs">
+                      <ul className="space-y-1.5 text-foreground">
+                        <li className="flex items-center gap-1.5 font-medium">
+                          <Check className="h-3.5 w-3.5 text-purple-600" /> Cortes e Barbas ilimitados
+                        </li>
+                        <li className="flex items-center gap-1.5 font-medium">
+                          <Check className="h-3.5 w-3.5 text-purple-600" /> Barboterapia com toalha quente
+                        </li>
+                        <li className="flex items-center gap-1.5 font-medium">
+                          <Check className="h-3.5 w-3.5 text-purple-600" /> Encaixe prioritário na agenda
+                        </li>
+                      </ul>
+                      <Button
+                        onClick={() => {
+                          toast.success("Excelente escolha! Solicite ao seu barbeiro.");
+                          setActiveTab("agendar");
+                        }}
+                        className="w-full text-xs bg-purple-600 text-white hover:bg-purple-700 font-bold"
+                      >
+                        Assinar VIP Black
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-              <Card className="border bg-card">
-                <CardHeader className="p-5 pb-2">
-                  <Badge variant="outline" className="w-fit text-xs mb-1">
-                    Barba Premium
-                  </Badge>
-                  <CardTitle className="text-base font-bold">Clube da Barba</CardTitle>
-                  <p className="text-2xl font-bold mt-2">
-                    R$ 79<span className="text-xs font-normal text-muted-foreground">/mês</span>
-                  </p>
-                </CardHeader>
-                <CardContent className="p-5 pt-2 space-y-3 text-xs">
-                  <ul className="space-y-1.5 text-muted-foreground">
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> Barbas ilimitadas no mês
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> Óleo e balm hidratante inclusos
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-emerald-500" /> Sobrancelha cortesia
-                    </li>
-                  </ul>
-                  <Button
-                    onClick={() => {
-                      toast.success("Fale com o barbeiro na sua próxima visita para ativar!");
-                      setActiveTab("agendar");
-                    }}
-                    className="w-full text-xs"
-                    variant="outline"
-                  >
-                    Quero Assinar
-                  </Button>
-                </CardContent>
-              </Card>
+                  <Card className="border bg-card">
+                    <CardHeader className="p-5 pb-2">
+                      <Badge className="bg-emerald-600 text-white w-fit text-xs mb-1">
+                        Recorrente 4x
+                      </Badge>
+                      <CardTitle className="text-base font-bold">Clube Recorrente</CardTitle>
+                      <p className="text-2xl font-bold mt-2">
+                        R$ 119<span className="text-xs font-normal text-muted-foreground">/mês</span>
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-5 pt-2 space-y-3 text-xs">
+                      <ul className="space-y-1.5 text-muted-foreground">
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> Até 4 atendimentos no mês
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> Controle de créditos debitados
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-emerald-500" /> 10% off em produtos da barbearia
+                        </li>
+                      </ul>
+                      <Button
+                        onClick={() => {
+                          toast.success("Fale com o barbeiro na sua próxima visita para ativar!");
+                          setActiveTab("agendar");
+                        }}
+                        className="w-full text-xs"
+                        variant="outline"
+                      >
+                        Quero Assinar
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         )}

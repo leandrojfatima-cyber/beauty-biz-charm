@@ -1400,11 +1400,18 @@ function AgendaInteligentePage() {
                       <SelectContent>
                         {clients.map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
-                            {c.name} {c.phone ? `(${c.phone})` : ""} {c.is_vip ? "⭐ VIP" : ""}
+                            {c.name} {c.phone ? `(${c.phone})` : ""}{" "}
+                            {c.vip_plan_name ? `· 👑 ${c.vip_plan_name}` : c.is_vip ? "⭐ VIP" : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {getClient(form.client_id)?.vip_plan_name && (
+                      <div className="mt-1.5 p-2 rounded bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-[11px] flex items-center gap-1.5 font-medium">
+                        <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                        <span>Assinatura Ativa: {getClient(form.client_id)?.vip_plan_name} (Coberto pela franquia do plano)</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Serviço & Duração Automática */}

@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { CrudPage } from "@/components/CrudPage";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   head: () => ({
@@ -26,14 +26,15 @@ export const Route = createFileRoute("/_authenticated/clientes")({
         { key: "is_vip", label: "Cliente VIP / Assinante de Clube", type: "boolean", default: false },
         {
           key: "vip_plan_name",
-          label: "Plano VIP Vinculado",
+          label: "Plano Vinculado",
           type: "select",
           options: [
             { value: "Nenhum", label: "Nenhum / Cliente Padrão" },
+            { value: "Plano One (1 Corte/mês)", label: "Plano One (1 Corte/mês)" },
             { value: "VIP Club Ouro (Cortes Ilimitados)", label: "VIP Club Ouro (Cortes Ilimitados)" },
             { value: "VIP Black Executive (Cabelo + Barba)", label: "VIP Black Executive (Cabelo + Barba)" },
             { value: "Clube da Barba Premium", label: "Clube da Barba Premium" },
-            { value: "VIP Fidelidade Anual", label: "VIP Fidelidade Anual" },
+            { value: "Recorrente 4x (4 Atendimentos)", label: "Recorrente 4x (4 Atendimentos)" },
           ],
         },
         { key: "notes", label: "Observações", type: "textarea" },
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/_authenticated/clientes")({
         },
         { label: "Telefone", render: (r) => r.phone ?? "—" },
         {
-          label: "Plano VIP",
+          label: "Plano do Clube",
           render: (r) =>
             r.is_vip ? (
               <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
@@ -63,6 +64,18 @@ export const Route = createFileRoute("/_authenticated/clientes")({
             ) : (
               <span className="text-xs text-muted-foreground">Padrão</span>
             ),
+        },
+        {
+          label: "Gestão do Plano",
+          render: (r) => (
+            <Link
+              to="/planos-assinaturas"
+              className="text-primary hover:underline text-xs inline-flex items-center gap-1 font-medium"
+            >
+              <Crown className="h-3 w-3 text-amber-500" />
+              <span>{r.is_vip ? "Franquia & Créditos" : "Vincular Assinatura"}</span>
+            </Link>
+          ),
         },
         {
           label: "Observações",
