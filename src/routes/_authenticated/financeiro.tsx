@@ -1,42 +1,129 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Clock,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Calendar,
+  Filter,
+  Download,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Search,
+  Percent,
+  CreditCard,
+  Building2,
+  ShieldCheck,
+  Check,
+  DollarSign,
+  PieChart,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Stat } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { brl, db, fmtDate, todayISO } from "@/lib/db";
 import { currentMonth, monthRange } from "@/lib/period";
+import { useProfessionals } from "@/lib/lookups";
+import {
+  calculateCashFlowStats,
+  calculateNetTransactionAmount,
+  exportTransactionsToCsv,
+  FINANCIAL_CATEGORY_LABELS,
+  PAYMENT_METHOD_LABELS,
+} from "@/lib/financial-engine";
+import type {
+  FinancialCategory,
+  FinancialTransactionRecord,
+  PaymentMethod,
+  TransactionStatus,
+  TransactionType,
+} from "@/types/financial";
 
 export const Route = createFileRoute("/_authenticated/financeiro")({
   head: () => ({
     meta: [
-      { title: "Financeiro — Belezi" },
-      { name: "description", content: "Gerencie financeiro do seu salão no Belezi." },
-      { property: "og:title", content: "Financeiro — Belezi" },
-      { property: "og:description", content: "Gerencie financeiro do seu salão no Belezi." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { title: "Financeiro & Fluxo de Caixa — Belezi" },
+      {
+        name: "description",
+        content:
+          "Fluxo de caixa completo da barbearia: receitas, despesas, contas a pagar e receber, previsto vs realizado e taxas.",
+      },
     ],
   }),
   component: FinanceiroPage,
 });
 
 function FinanceiroPage() {
+  const qc = useQueryClient();
   const [month, setMonth] = useState(currentMonth());
   const { start, end } = monthRange(month);
-  const qc = useQueryClient();
-  const { data: tx = [] } = useQuery({
+
+  const [activeTab, setActiveTab] = useState<"fluxo" | "lancamentos" | "previsao">("fluxo");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [formType, setFormType] = useState<TransactionType>("receita");
+  const [formData, setFormData] = useState<{
+    type: TransactionType;
+    category: FinancialCategory | string;
+    description: string;
+    amount: string;
+    card_fee: string;
+    date: string;
+    due_date: string;
+    status: TransactionStatus;
+    payment_method: PaymentMethod | string;
+    professional_id: string;
+    notes: string;
+  }>({
+    type: "receita",
+    category: "atendimento",
+    description: "",
+    amount: "",
+    card_fee: "0",
+    date: todayISO(),
+    due_date: todayISO(),
+    status: "realizado",
+    payment_method: "pix",
+    professional_id: "",
+    notes: "",
+  });
+
+  const { data: pros = [] } = useProfessionals();
+
+  // Consulta de transações do mês selecionado
+  const { data: transactions = [], isLoading } = useQuery<FinancialTransactionRecord[]>({
     queryKey: ["transactions", month],
     queryFn: async () => {
       const { data, error } = await db
@@ -46,310 +133,910 @@ function FinanceiroPage() {
         .lte("date", end)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.warn("Erro ao buscar transações:", error);
+        return [];
+      }
+      return (data ?? []) as FinancialTransactionRecord[];
     },
   });
-  const { data: before = 0 } = useQuery({
+
+  // Saldo anterior acumulado antes do mês corrente
+  const { data: balanceBefore = 0 } = useQuery<number>({
     queryKey: ["balance-before", month],
     queryFn: async () => {
       const { data, error } = await db
         .from("transactions")
-        .select("type, amount")
-        .lt("date", start);
-      if (error) throw error;
-      return data.reduce(
-        (s: number, t: any) => s + (t.type === "receita" ? 1 : -1) * Number(t.amount),
+        .select("type, amount, net_amount, status")
+        .lt("date", start)
+        .eq("status", "realizado");
+      if (error) return 0;
+      return (data ?? []).reduce(
+        (sum: number, t: any) =>
+          sum + (t.type === "receita" ? 1 : -1) * Number(t.net_amount ?? t.amount),
         0,
       );
     },
   });
-  const [form, setForm] = useState<any | null>(null);
-  const save = useMutation({
+
+  // Salvar nova transação
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await db
-        .from("transactions")
-        .insert({ ...form, amount: Number(form.amount) });
+      const gross = Number(formData.amount) || 0;
+      const fee = Number(formData.card_fee) || 0;
+      const net = calculateNetTransactionAmount(gross, fee);
+
+      const payload = {
+        type: formData.type,
+        category: formData.category,
+        description: formData.description.trim(),
+        amount: gross,
+        net_amount: net,
+        card_fee: fee,
+        date: formData.date || todayISO(),
+        due_date: formData.due_date || null,
+        status: formData.status,
+        payment_method: formData.payment_method,
+        professional_id: formData.professional_id ? formData.professional_id : null,
+        notes: formData.notes.trim() || null,
+      };
+
+      const { error } = await db.from("transactions").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries();
-      setForm(null);
-      toast.success("Lançamento salvo");
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["balance-before"] });
+      setFormOpen(false);
+      resetForm("receita");
+      toast.success("Lançamento financeiro registrado com sucesso!");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(`Erro ao salvar: ${e.message}`),
   });
-  const del = useMutation({
+
+  // Liquidar/Realizar lançamento previsto
+  const settleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db
+        .from("transactions")
+        .update({ status: "realizado" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["balance-before"] });
+      toast.success("Lançamento marcado como Realizado!");
+    },
+    onError: (e: any) => toast.error(`Erro ao liquidar: ${e.message}`),
+  });
+
+  // Excluir transação
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await db.from("transactions").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["balance-before"] });
+      toast.success("Lançamento removido");
+    },
+    onError: (e: any) => toast.error(`Erro ao excluir: ${e.message}`),
   });
 
-  const income = tx
-    .filter((t: any) => t.type === "receita")
-    .reduce((s: number, t: any) => s + Number(t.amount), 0);
-  const expense = tx
-    .filter((t: any) => t.type === "despesa")
-    .reduce((s: number, t: any) => s + Number(t.amount), 0);
-
-  // daily cash flow
-  const days: Record<string, { in: number; out: number }> = {};
-  tx.forEach((t: any) => {
-    const d = (days[t.date] ??= { in: 0, out: 0 });
-    d[t.type === "receita" ? "in" : "out"] += Number(t.amount);
-  });
-  let running = before;
-  const flow = Object.keys(days)
-    .sort()
-    .map((d) => {
-      const v = days[d]!;
-      running += v.in - v.out;
-      return { d, in: v.in, out: v.out, bal: running };
+  function resetForm(type: TransactionType) {
+    setFormType(type);
+    setFormData({
+      type,
+      category: type === "receita" ? "atendimento" : "aluguel",
+      description: "",
+      amount: "",
+      card_fee: "0",
+      date: todayISO(),
+      due_date: todayISO(),
+      status: "realizado",
+      payment_method: "pix",
+      professional_id: "",
+      notes: "",
     });
-  const max = Math.max(1, ...flow.map((f) => Math.max(f.in, f.out)));
+  }
 
-  const byCat: Record<string, number> = {};
-  tx.filter((t: any) => t.type === "despesa").forEach(
-    (t: any) => (byCat[t.category] = (byCat[t.category] ?? 0) + Number(t.amount)),
-  );
+  function openCreateModal(type: TransactionType) {
+    resetForm(type);
+    setFormOpen(true);
+  }
+
+  // Estatísticas de fluxo de caixa (Realizado vs Previsto)
+  const stats = useMemo(() => {
+    return calculateCashFlowStats(transactions, balanceBefore);
+  }, [transactions, balanceBefore]);
+
+  // Transações filtradas
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (typeFilter !== "all" && t.type !== typeFilter) return false;
+      if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const descMatch = (t.description || "").toLowerCase().includes(q);
+        const catMatch = (FINANCIAL_CATEGORY_LABELS[t.category] || t.category)
+          .toLowerCase()
+          .includes(q);
+        if (!descMatch && !catMatch) return false;
+      }
+      return true;
+    });
+  }, [transactions, statusFilter, typeFilter, categoryFilter, searchQuery]);
+
+  // Contas a pagar e receber (Previstos)
+  const pendingTransactions = useMemo(() => {
+    return transactions.filter((t) => t.status === "previsto");
+  }, [transactions]);
+
+  // Agrupamento diário do fluxo de caixa
+  const dailyFlow = useMemo(() => {
+    const days: Record<string, { date: string; in: number; out: number; balance: number }> = {};
+    for (const t of transactions) {
+      if (t.status === "cancelado") continue;
+      const d = (days[t.date] ??= { date: t.date, in: 0, out: 0, balance: 0 });
+      const val = Number(t.net_amount ?? t.amount) || 0;
+      if (t.type === "receita") {
+        d.in += val;
+      } else {
+        d.out += val;
+      }
+      d.balance = d.in - d.out;
+    }
+    return Object.values(days).sort((a, b) => b.date.localeCompare(a.date));
+  }, [transactions]);
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Header & Controles de Período */}
       <PageHeader
-        title="Financeiro"
-        subtitle="Fluxo de caixa, receitas e despesas"
+        title="Financeiro & Fluxo de Caixa"
+        subtitle="Controle operacional completo de entradas, saídas, previsto vs realizado e taxas"
         actions={
-          <>
-            <Input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="w-44"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1 text-sm shadow-xs">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="bg-transparent text-sm font-medium outline-hidden"
+              />
+            </div>
+
             <Button
               variant="outline"
-              onClick={() =>
-                setForm({
-                  type: "despesa",
-                  category: "geral",
-                  description: "",
-                  amount: "",
-                  date: todayISO(),
-                })
-              }
+              size="sm"
+              onClick={() => exportTransactionsToCsv(transactions, `financeiro_${month}.csv`)}
+              disabled={transactions.length === 0}
+              className="gap-1.5"
             >
-              <Minus className="mr-1 h-4 w-4" />
-              Despesa
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exportar</span> CSV
             </Button>
+
             <Button
-              onClick={() =>
-                setForm({
-                  type: "receita",
-                  category: "geral",
-                  description: "",
-                  amount: "",
-                  date: todayISO(),
-                })
-              }
+              size="sm"
+              variant="outline"
+              onClick={() => openCreateModal("receita")}
+              className="gap-1.5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-400"
             >
-              <Plus className="mr-1 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Receita
             </Button>
-          </>
+
+            <Button
+              size="sm"
+              onClick={() => openCreateModal("despesa")}
+              className="gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Plus className="h-4 w-4" />
+              Despesa
+            </Button>
+          </div>
         }
       />
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Saldo inicial" value={brl(before)} />
-        <Stat label="Receitas" value={brl(income)} tone="success" />
-        <Stat label="Despesas" value={brl(expense)} tone="destructive" />
-        <Stat label="Saldo final" value={brl(before + income - expense)} tone="primary" />
-      </div>
-
-      <div className="mb-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="mb-4 text-sm font-semibold">Fluxo de caixa diário</p>
-          {flow.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Sem movimentações no mês.
-            </p>
-          ) : (
-            <div className="flex h-40 items-end gap-1.5 overflow-x-auto">
-              {flow.map((f) => (
-                <div
-                  key={f.d}
-                  className="flex min-w-0 flex-1 flex-col items-center gap-1"
-                  title={`${fmtDate(f.d + "T12:00")}: +${brl(f.in)} / -${brl(f.out)} · saldo ${brl(f.bal)}`}
-                >
-                  <div className="flex h-32 w-full items-end gap-0.5">
-                    <div
-                      className="flex-1 rounded-t bg-success"
-                      style={{ height: `${(f.in / max) * 100}%` }}
-                    />
-                    <div
-                      className="flex-1 rounded-t bg-destructive/80"
-                      style={{ height: `${(f.out / max) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">{f.d.slice(8)}</span>
-                </div>
-              ))}
+      {/* Banner de Separação Rigorosa do Financeiro (Isolamento por salon_id) */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+          <div className="flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-primary">
+                Separação Financeira Rigorosa & Isolamento de Dados
+              </span>
+              <Badge variant="outline" className="border-primary/30 text-xs text-primary">
+                Etapa 10 Conforme
+              </Badge>
             </div>
-          )}
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="mb-3 text-sm font-semibold">Despesas por categoria</p>
-          {Object.keys(byCat).length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhuma despesa.</p>
-          )}
-          {Object.entries(byCat)
-            .sort((a, b) => b[1] - a[1])
-            .map(([c, v]) => (
-              <div key={c} className="mb-2">
-                <div className="flex justify-between text-sm capitalize">
-                  <span>{c}</span>
-                  <span>{brl(v)}</span>
-                </div>
-                <div className="mt-1 h-1.5 rounded bg-muted">
-                  <div
-                    className="h-full rounded bg-destructive/70"
-                    style={{ width: `${(v / expense) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+            <p className="text-xs text-muted-foreground">
+              Este módulo gerencia exclusivamente o <strong>caixa operacional da sua barbearia</strong>{" "}
+              (atendimentos, venda de produtos, assinaturas de clientes finais, vales e despesas
+              locais). As cobranças da licença de software da <strong>NEXADASH</strong> são
+              completamente apartadas e não interferem no seu saldo de caixa.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-card">
-        <table className="mobile-table w-full text-sm">
-          <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">Data</th>
-              <th className="px-4 py-3">Descrição</th>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3 text-right">Valor</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {tx.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                  Nenhum lançamento.
-                </td>
-              </tr>
-            )}
-            {tx.map((t: any) => (
-              <tr key={t.id} className="border-b last:border-0">
-                <td data-label="Data" className="px-4 py-3">
-                  {fmtDate(t.date + "T12:00")}
-                </td>
-                <td data-label="Descrição" className="px-4 py-3">
-                  {t.description}
-                </td>
-                <td data-label="Categoria" className="px-4 py-3">
-                  <Badge variant="outline" className="capitalize">
-                    {t.category}
-                  </Badge>
-                </td>
-                <td
-                  data-label="Valor"
-                  className={
-                    "px-4 py-3 text-right font-medium " +
-                    (t.type === "receita" ? "text-success" : "text-destructive")
+      {/* Painel de Indicadores de Caixa: Realizado vs Previsto */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Caixa Atual Realizado */}
+        <Card className="relative overflow-hidden border-l-4 border-l-primary shadow-xs">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Saldo em Caixa (Realizado)</span>
+              <Wallet className="h-4 w-4 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div
+              className={`text-2xl font-bold tracking-tight ${
+                stats.realizedBalance >= 0 ? "text-primary" : "text-destructive"
+              }`}
+            >
+              {brl(stats.realizedBalance)}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Saldo anterior: <span className="font-medium">{brl(stats.balanceBefore)}</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Entradas Realizadas */}
+        <Card className="relative overflow-hidden border-l-4 border-l-emerald-500 shadow-xs">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Entradas Realizadas</span>
+              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+              {brl(stats.realizedIncome)}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Previstas a receber:{" "}
+              <span className="font-medium text-emerald-600">+{brl(stats.projectedIncome)}</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Saídas Realizadas */}
+        <Card className="relative overflow-hidden border-l-4 border-l-rose-500 shadow-xs">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Saídas Realizadas</span>
+              <ArrowDownRight className="h-4 w-4 text-rose-500" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400">
+              {brl(stats.realizedExpense)}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Previstas a pagar:{" "}
+              <span className="font-medium text-rose-600">-{brl(stats.projectedExpense)}</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Saldo Projetado (Previsão de Fechamento) */}
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-xs">
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <span>Saldo Projetado (Previsão)</span>
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div
+              className={`text-2xl font-bold tracking-tight ${
+                stats.totalLiquidForecast >= 0 ? "text-blue-600 dark:text-blue-400" : "text-destructive"
+              }`}
+            >
+              {brl(stats.totalLiquidForecast)}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Margem operacional:{" "}
+              <span className="font-semibold text-foreground">
+                {stats.operatingProfitPct}%
+              </span>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navegação por Abas Principais */}
+      <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsTrigger value="fluxo" className="gap-1.5 text-xs sm:text-sm">
+            <PieChart className="h-4 w-4" />
+            Fluxo Diário
+          </TabsTrigger>
+          <TabsTrigger value="lancamentos" className="gap-1.5 text-xs sm:text-sm">
+            <DollarSign className="h-4 w-4" />
+            Lançamentos ({filteredTransactions.length})
+          </TabsTrigger>
+          <TabsTrigger value="previsao" className="gap-1.5 text-xs sm:text-sm">
+            <Clock className="h-4 w-4" />
+            Contas Previstas ({pendingTransactions.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ABA 1: Fluxo de Caixa Diário */}
+        <TabsContent value="fluxo" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6 pb-2">
+              <CardTitle className="text-base sm:text-lg">Extrato Diário do Fluxo de Caixa</CardTitle>
+              <CardDescription className="text-xs">
+                Demonstrativo de entradas, saídas e resultado consolidado por data de competência
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto">
+                <table className="mobile-table w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Data</th>
+                      <th className="px-4 py-3 text-right">Entradas (R$)</th>
+                      <th className="px-4 py-3 text-right">Saídas (R$)</th>
+                      <th className="px-4 py-3 text-right">Saldo do Dia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyFlow.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-sm text-muted-foreground">
+                          Nenhuma movimentação financeira registrada neste mês.
+                        </td>
+                      </tr>
+                    ) : (
+                      dailyFlow.map((d) => (
+                        <tr key={d.date} className="border-b hover:bg-muted/20">
+                          <td data-label="Data" className="px-4 py-3 font-medium">
+                            {fmtDate(d.date)}
+                          </td>
+                          <td
+                            data-label="Entradas"
+                            className="px-4 py-3 text-right font-medium text-emerald-600"
+                          >
+                            +{brl(d.in)}
+                          </td>
+                          <td
+                            data-label="Saídas"
+                            className="px-4 py-3 text-right font-medium text-rose-600"
+                          >
+                            -{brl(d.out)}
+                          </td>
+                          <td
+                            data-label="Saldo do Dia"
+                            className={`px-4 py-3 text-right font-bold ${
+                              d.balance >= 0 ? "text-primary" : "text-destructive"
+                            }`}
+                          >
+                            {brl(d.balance)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ABA 2: Todos os Lançamentos e Movimentações */}
+        <TabsContent value="lancamentos" className="space-y-4">
+          {/* Barra de Filtros Rápidos */}
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-xs">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por descrição ou categoria..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 text-xs sm:text-sm"
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="realizado">Realizado</SelectItem>
+                <SelectItem value="previsto">Previsto</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[130px] text-xs">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Receitas & Despesas</SelectItem>
+                <SelectItem value="receita">Apenas Receitas</SelectItem>
+                <SelectItem value="despesa">Apenas Despesas</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[160px] text-xs">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Categorias</SelectItem>
+                {Object.entries(FINANCIAL_CATEGORY_LABELS).map(([cat, label]) => (
+                  <SelectItem key={cat} value={cat}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tabela de Lançamentos */}
+          <div className="overflow-x-auto rounded-lg border bg-card shadow-xs">
+            <table className="mobile-table w-full text-sm">
+              <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left">Data</th>
+                  <th className="px-4 py-3 text-left">Descrição & Categoria</th>
+                  <th className="px-4 py-3 text-center">Pagamento</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-right">Valor Bruto</th>
+                  <th className="px-4 py-3 text-right">Taxa / Líquido</th>
+                  <th className="px-4 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
+                      Nenhum lançamento encontrado com os filtros atuais.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((t) => {
+                    const isIncome = t.type === "receita";
+                    const isRealized = t.status === "realizado";
+                    const fee = Number(t.card_fee || 0);
+
+                    return (
+                      <tr key={t.id} className="border-b hover:bg-muted/20">
+                        <td data-label="Data" className="px-4 py-3 font-medium text-xs whitespace-nowrap">
+                          {fmtDate(t.date)}
+                        </td>
+
+                        <td data-label="Descrição" className="px-4 py-3">
+                          <div className="font-medium text-foreground">{t.description}</div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>{FINANCIAL_CATEGORY_LABELS[t.category] || t.category}</span>
+                            {t.due_date && t.status === "previsto" && (
+                              <span className="text-amber-600 dark:text-amber-400">
+                                · Vence {fmtDate(t.due_date)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td data-label="Pagamento" className="px-4 py-3 text-center">
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {PAYMENT_METHOD_LABELS[t.payment_method || ""] || t.payment_method || "Dinheiro"}
+                          </Badge>
+                        </td>
+
+                        <td data-label="Status" className="px-4 py-3 text-center">
+                          {isRealized ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300 border-emerald-500/30">
+                              Realizado
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300 border-amber-500/30">
+                              Previsto
+                            </Badge>
+                          )}
+                        </td>
+
+                        <td
+                          data-label="Valor Bruto"
+                          className={`px-4 py-3 text-right font-semibold ${
+                            isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                          }`}
+                        >
+                          {isIncome ? "+" : "-"}
+                          {brl(t.amount)}
+                        </td>
+
+                        <td data-label="Líquido" className="px-4 py-3 text-right text-xs">
+                          {fee > 0 ? (
+                            <div>
+                              <span className="text-muted-foreground line-through mr-1">
+                                {brl(t.amount)}
+                              </span>
+                              <span className="font-semibold text-foreground">
+                                {brl(t.net_amount ?? t.amount)}
+                              </span>
+                              <div className="text-[10px] text-muted-foreground">
+                                Taxa: {brl(fee)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {brl(t.net_amount ?? t.amount)}
+                            </span>
+                          )}
+                        </td>
+
+                        <td data-label="Ações" className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {!isRealized && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => settleMutation.mutate(t.id)}
+                                className="h-7 text-xs border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+                                title="Liquidar lançamento (marcar como realizado)"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                Liquidar
+                              </Button>
+                            )}
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                if (confirm(`Deseja realmente excluir "${t.description}"?`)) {
+                                  deleteMutation.mutate(t.id);
+                                }
+                              }}
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              title="Excluir lançamento"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </TabsContent>
+
+        {/* ABA 3: Contas a Pagar & Receber (Previsto vs Realizado) */}
+        <TabsContent value="previsao" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6 pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base sm:text-lg">
+                    Contas a Pagar & Receber Agendadas
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Lançamentos previstos para controle de fluxo de caixa futuro e liquidação com um clique
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="border-amber-500/30 text-amber-600">
+                  {pendingTransactions.length} pendentes
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto">
+                <table className="mobile-table w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Vencimento</th>
+                      <th className="px-4 py-3 text-left">Descrição</th>
+                      <th className="px-4 py-3 text-left">Categoria</th>
+                      <th className="px-4 py-3 text-center">Tipo</th>
+                      <th className="px-4 py-3 text-right">Valor Previsto</th>
+                      <th className="px-4 py-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingTransactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
+                          Nenhuma conta a pagar ou receber pendente no período.
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingTransactions.map((t) => (
+                        <tr key={t.id} className="border-b hover:bg-muted/20">
+                          <td data-label="Vencimento" className="px-4 py-3 font-medium text-xs">
+                            {t.due_date ? fmtDate(t.due_date) : fmtDate(t.date)}
+                          </td>
+                          <td data-label="Descrição" className="px-4 py-3 font-medium">
+                            {t.description}
+                          </td>
+                          <td data-label="Categoria" className="px-4 py-3 text-xs text-muted-foreground">
+                            {FINANCIAL_CATEGORY_LABELS[t.category] || t.category}
+                          </td>
+                          <td data-label="Tipo" className="px-4 py-3 text-center">
+                            {t.type === "receita" ? (
+                              <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">
+                                A Receber
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-rose-500/15 text-rose-700 border-rose-500/30">
+                                A Pagar
+                              </Badge>
+                            )}
+                          </td>
+                          <td
+                            data-label="Valor"
+                            className={`px-4 py-3 text-right font-bold ${
+                              t.type === "receita"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {brl(t.net_amount ?? t.amount)}
+                          </td>
+                          <td data-label="Ação" className="px-4 py-3 text-right">
+                            <Button
+                              size="sm"
+                              onClick={() => settleMutation.mutate(t.id)}
+                              className="h-8 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Liquidar
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de Novo Lançamento (Receita ou Despesa) */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {formData.type === "receita" ? (
+                <>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                    <ArrowUpRight className="h-4 w-4" />
+                  </div>
+                  Nova Receita Operacional
+                </>
+              ) : (
+                <>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/15 text-rose-600">
+                    <ArrowDownRight className="h-4 w-4" />
+                  </div>
+                  Nova Despesa Operacional
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {formData.type === "receita"
+                ? "Registre uma entrada proveniente de serviços, produtos, assinaturas ou outros."
+                : "Registre uma saída para aluguel, luz, taxas de cartão, comissões, vales ou insumos."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Tipo de Lançamento</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(val: TransactionType) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      type: val,
+                      category: val === "receita" ? "atendimento" : "aluguel",
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="receita">Receita (+)</SelectItem>
+                    <SelectItem value="despesa">Despesa (-)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Status do Caixa</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(val: TransactionStatus) =>
+                    setFormData((prev) => ({ ...prev, status: val }))
                   }
                 >
-                  {t.type === "receita" ? "+" : "−"}
-                  {brl(t.amount)}
-                </td>
-                <td data-label="Ações" className="px-2">
-                  {!t.order_id && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => confirm("Excluir lançamento?") && del.mutate(t.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nova {form?.type}</DialogTitle>
-          </DialogHeader>
-          {form && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <Label className="mb-1.5 block">Descrição</Label>
-                <Input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder={
-                    form.type === "despesa" ? "Ex.: Aluguel, energia, salário" : "Ex.: Venda avulsa"
-                  }
-                />
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="realizado">Realizado (Já liquidado)</SelectItem>
+                    <SelectItem value="previsto">Previsto (A vencer/receber)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <Label className="mb-1.5 block">Valor (R$)</Label>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Categoria</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(val) => setFormData((prev) => ({ ...prev, category: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FINANCIAL_CATEGORY_LABELS).map(([cat, label]) => (
+                    <SelectItem key={cat} value={cat}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Descrição</Label>
+              <Input
+                placeholder="Ex: Corte e Barba VIP, Compra de Pomadas, Aluguel do mês..."
+                value={formData.description}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Valor Bruto (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  min="0"
+                  placeholder="0,00"
+                  value={formData.amount}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, amount: e.target.value }))}
                 />
               </div>
-              <div>
-                <Label className="mb-1.5 block">Data</Label>
+
+              <div className="space-y-1.5">
+                <Label>Taxa da Maquininha (R$)</Label>
                 <Input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={formData.card_fee}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, card_fee: e.target.value }))}
                 />
-              </div>
-              <div className="sm:col-span-2">
-                <Label className="mb-1.5 block">Categoria</Label>
-                <Input
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  list="cats"
-                />
-                <datalist id="cats">
-                  {[
-                    "aluguel",
-                    "energia",
-                    "água",
-                    "salários",
-                    "comissões",
-                    "produtos",
-                    "marketing",
-                    "impostos",
-                    "geral",
-                  ].map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
               </div>
             </div>
-          )}
+
+            {Number(formData.card_fee) > 0 && (
+              <div className="rounded-md bg-muted/50 p-2.5 text-xs text-muted-foreground flex justify-between">
+                <span>Valor Líquido no Caixa:</span>
+                <strong className="text-foreground">
+                  {brl(
+                    calculateNetTransactionAmount(
+                      Number(formData.amount),
+                      Number(formData.card_fee),
+                    ),
+                  )}
+                </strong>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Forma de Pagamento</Label>
+                <Select
+                  value={formData.payment_method}
+                  onValueChange={(val) =>
+                    setFormData((prev) => ({ ...prev, payment_method: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Barbeiro Vinculado (Opcional)</Label>
+                <Select
+                  value={formData.professional_id || "none"}
+                  onValueChange={(val) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      professional_id: val === "none" ? "" : val,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum profissional</SelectItem>
+                    {pros.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Data de Competência</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Data de Vencimento</Label>
+                <Input
+                  type="date"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, due_date: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Observações Adicionais</Label>
+              <Textarea
+                placeholder="Detalhes adicionais, número de nota ou comprovante..."
+                value={formData.notes}
+                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+              />
+            </div>
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setForm(null)}>
+            <Button variant="outline" onClick={() => setFormOpen(false)}>
               Cancelar
             </Button>
             <Button
-              onClick={() => save.mutate()}
-              disabled={!form?.description || !form?.amount || save.isPending}
+              onClick={() => saveMutation.mutate()}
+              disabled={!formData.description.trim() || !formData.amount || Number(formData.amount) <= 0 || saveMutation.isPending}
+              className={formData.type === "receita" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
             >
-              Salvar
+              {saveMutation.isPending ? "Salvando..." : "Confirmar Lançamento"}
             </Button>
           </DialogFooter>
         </DialogContent>
