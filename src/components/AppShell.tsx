@@ -32,7 +32,7 @@ const nav = [
   { to: "/produtos", label: "Produtos e estoque", icon: Package },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/comissoes", label: "Comissões", icon: Percent },
-  { to: "/salao", label: "Dados do salão", icon: Store },
+  { to: "/salao", label: "Configuração da Barbearia", icon: Store },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
