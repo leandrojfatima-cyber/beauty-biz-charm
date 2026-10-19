@@ -68,41 +68,42 @@ function ComandasPage() {
       </Tabs>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading && <p className="text-muted-foreground">Carregando...</p>}
-        {!isLoading && orders.length === 0 && (
+        {!isLoading && (orders ?? []).length === 0 && (
           <p className="col-span-full rounded-lg border border-dashed p-8 text-center text-muted-foreground">
             Nenhuma comanda aqui.
           </p>
         )}
-        {orders.map((o: any) => {
-          const sub = o.order_items.reduce(
-            (s: number, i: any) => s + Number(i.qty) * Number(i.unit_price),
+        {(orders ?? []).map((o: any) => {
+          const items = Array.isArray(o?.order_items) ? o.order_items : [];
+          const sub = items.reduce(
+            (s: number, i: any) => s + Number(i?.qty ?? 0) * Number(i?.unit_price ?? 0),
             0,
           );
           return (
             <Link
-              key={o.id}
+              key={o?.id ?? Math.random()}
               to="/comandas/$id"
-              params={{ id: o.id }}
+              params={{ id: o?.id ?? "" }}
               className="rounded-lg border bg-card p-4 transition-colors hover:border-primary"
             >
               <div className="flex items-center justify-between">
-                <span className="font-display text-lg font-semibold">#{o.number}</span>
+                <span className="font-display text-lg font-semibold">#{o?.number ?? "—"}</span>
                 <Badge
-                  variant={o.status === "aberta" ? "default" : "secondary"}
+                  variant={o?.status === "aberta" ? "default" : "secondary"}
                   className="capitalize"
                 >
-                  {o.status}
+                  {o?.status ?? "aberta"}
                 </Badge>
               </div>
               <p className="mt-1">
-                {clients.find((c: any) => c.id === o.client_id)?.name ?? "Sem cliente"}
+                {clients.find((c: any) => c?.id === o?.client_id)?.name ?? "Sem cliente"}
               </p>
               <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 text-sm text-muted-foreground">
                 <span>
-                  {fmtDate(o.opened_at)} {fmtTime(o.opened_at)} · {o.order_items.length} itens
+                  {fmtDate(o?.opened_at)} {fmtTime(o?.opened_at)} · {items.length} itens
                 </span>
                 <span className="font-semibold text-foreground">
-                  {brl(o.status === "fechada" ? o.total : sub)}
+                  {brl(o?.status === "fechada" ? o?.total : sub)}
                 </span>
               </div>
             </Link>

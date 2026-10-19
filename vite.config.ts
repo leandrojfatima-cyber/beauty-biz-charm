@@ -15,9 +15,30 @@ export default defineConfig({
   vite: {
     server: {
       host: "0.0.0.0",
-      port: 5000,
+      port: 3000,
       strictPort: true,
       allowedHosts: true,
+    },
+    resolve: {
+      dedupe: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@tanstack/react-router",
+        "@tanstack/react-query",
+      ],
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@tanstack/react-router",
+        "@tanstack/react-query",
+      ],
     },
   },
 });

@@ -57,27 +57,27 @@ export const Route = createFileRoute("/_authenticated/profissionais")({
             render: (r) => (
               <div className="flex items-center gap-2.5">
                 <Avatar className="h-8 w-8 border">
-                  <AvatarImage src={r.photo_url || ""} />
+                  <AvatarImage src={r?.photo_url || ""} />
                   <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-                    {r.name?.slice(0, 2).toUpperCase()}
+                    {String(r?.name || "P").slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <span className="font-semibold block">{r.name}</span>
-                  {r.working_hours && (
+                  <span className="font-semibold block">{r?.name ?? "Profissional"}</span>
+                  {r?.working_hours && (
                     <span className="text-[11px] text-muted-foreground block">{r.working_hours}</span>
                   )}
                 </div>
               </div>
             ),
           },
-          { label: "Função", render: (r) => ROLES.find((x) => x.value === r.role)?.label ?? r.role },
-          { label: "Telefone", render: (r) => r.phone ?? "—" },
+          { label: "Função", render: (r) => ROLES.find((x) => x.value === r?.role)?.label ?? r?.role ?? "—" },
+          { label: "Telefone", render: (r) => r?.phone ?? "—" },
           {
             label: "Status",
             render: (r) => (
-              <Badge variant={r.active ? "default" : "secondary"}>
-                {r.active ? "Ativo" : "Inativo"}
+              <Badge variant={r?.active ? "default" : "secondary"}>
+                {r?.active ? "Ativo" : "Inativo"}
               </Badge>
             ),
           },

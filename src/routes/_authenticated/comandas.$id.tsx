@@ -61,9 +61,13 @@ function ComandaPage() {
         .from("orders")
         .select("*, order_items(*)")
         .eq("id", id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      data.order_items.sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
+      if (data && Array.isArray(data.order_items)) {
+        data.order_items.sort((a: any, b: any) =>
+          String(a?.created_at ?? "").localeCompare(String(b?.created_at ?? ""))
+        );
+      }
       return data;
     },
   });
@@ -133,11 +137,12 @@ function ComandaPage() {
 
   if (!order) return <p className="text-muted-foreground">Carregando...</p>;
   const open = order.status === "aberta";
-  const subtotal = order.order_items.reduce(
-    (s: number, i: any) => s + Number(i.qty) * Number(i.unit_price),
+  const orderItems = Array.isArray(order.order_items) ? order.order_items : [];
+  const subtotal = orderItems.reduce(
+    (s: number, i: any) => s + Number(i?.qty ?? 0) * Number(i?.unit_price ?? 0),
     0,
   );
-  const total = Math.max(subtotal - Number(order.discount), 0);
+  const total = Math.max(subtotal - Number(order.discount ?? 0), 0);
   const proName = (pid: string) => pros.find((p: any) => p.id === pid)?.name ?? "—";
   const catalog =
     item.kind === "servico"

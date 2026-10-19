@@ -113,33 +113,35 @@ function ProdutosPage() {
             label: "Produto",
             render: (r) => (
               <div>
-                <span className="font-medium">{r.name}</span>
-                {r.sku && <span className="ml-2 text-xs text-muted-foreground">{r.sku}</span>}
+                <span className="font-medium">{r?.name ?? "Produto"}</span>
+                {r?.sku && <span className="ml-2 text-xs text-muted-foreground">{r.sku}</span>}
               </div>
             ),
           },
           {
             label: "Tipo",
-            render: (r) => <Badge variant="outline">{r.for_sale ? "Venda" : "Uso interno"}</Badge>,
+            render: (r) => <Badge variant="outline">{r?.for_sale ? "Venda" : "Uso interno"}</Badge>,
           },
           {
             label: "Estoque",
             render: (r) => (
               <span
                 className={
-                  Number(r.stock) <= Number(r.min_stock) ? "font-semibold text-destructive" : ""
+                  Number(r?.stock ?? 0) <= Number(r?.min_stock ?? 0)
+                    ? "font-semibold text-destructive"
+                    : ""
                 }
               >
-                {Number(r.stock)}
-                {Number(r.stock) <= Number(r.min_stock) && " · baixo"}
+                {Number(r?.stock ?? 0)}
+                {Number(r?.stock ?? 0) <= Number(r?.min_stock ?? 0) && " · baixo"}
               </span>
             ),
           },
-          { label: "Custo", render: (r) => brl(r.cost), className: "text-right" },
-          { label: "Venda", render: (r) => brl(r.price), className: "text-right" },
+          { label: "Custo", render: (r) => brl(r?.cost ?? 0), className: "text-right" },
+          { label: "Venda", render: (r) => brl(r?.price ?? 0), className: "text-right" },
           {
             label: "Comissão",
-            render: (r) => `${Number(r.commission_pct)}%`,
+            render: (r) => `${Number(r?.commission_pct ?? 0)}%`,
             className: "text-right",
           },
         ]}
@@ -157,7 +159,7 @@ function ProdutosPage() {
       <Dialog open={!!mov} onOpenChange={(o) => !o && setMov(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Movimentar estoque — {mov?.product.name}</DialogTitle>
+            <DialogTitle>Movimentar estoque — {mov?.product?.name ?? "Produto"}</DialogTitle>
           </DialogHeader>
           {mov && (
             <div className="grid gap-4">

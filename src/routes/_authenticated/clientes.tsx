@@ -81,11 +81,11 @@ export const Route = createFileRoute("/_authenticated/clientes")({
         {
           label: "WhatsApp",
           render: (r) =>
-            r.phone ? (
+            r?.phone ? (
               <a
                 href={generateWhatsAppUrl(
                   r.phone,
-                  `Olá, ${r.name.split(" ")[0]}! Mensagem da barbearia.`,
+                  `Olá, ${String(r?.name || "Cliente").split(" ")[0]}! Mensagem da barbearia.`,
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -101,7 +101,7 @@ export const Route = createFileRoute("/_authenticated/clientes")({
         {
           label: "Aniversário",
           render: (r) =>
-            r.birth_date ? (
+            r?.birth_date ? (
               <span className="text-xs flex items-center gap-1 text-muted-foreground">
                 <Cake className="h-3 w-3 text-pink-500" />
                 {fmtDate(r.birth_date)}
@@ -113,7 +113,7 @@ export const Route = createFileRoute("/_authenticated/clientes")({
         {
           label: "Faltas (No-Show)",
           render: (r) =>
-            r.no_shows_count > 0 ? (
+            Number(r?.no_shows_count ?? 0) > 0 ? (
               <Badge className="bg-rose-500/15 text-rose-700 border-rose-500/30 text-xs">
                 {r.no_shows_count} falta(s)
               </Badge>

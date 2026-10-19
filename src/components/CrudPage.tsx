@@ -62,10 +62,13 @@ export function CrudPage({
   const [editing, setEditing] = useState<any | null>(null);
   const [search, setSearch] = useState("");
 
+  const safeFields = (fields ?? []).filter((f): f is Field => Boolean(f && f?.key));
+  const safeColumns = (columns ?? []).filter((c): c is Column => Boolean(c && c?.label));
+
   const save = useMutation({
     mutationFn: async (row: any) => {
       const payload: any = {};
-      for (const f of fields) {
+      for (const f of safeFields) {
         let v = row[f.key];
         if (f.type === "number") v = v === "" || v == null ? 0 : Number(v);
         if (f.type === "boolean") v = !!v;
@@ -97,11 +100,11 @@ export function CrudPage({
   });
 
   const blank = () =>
-    Object.fromEntries(fields.map((f) => [f.key, f.default ?? (f.type === "boolean" ? true : "")]));
-  const filtered = data.filter(
+    Object.fromEntries(safeFields.map((f) => [f.key, f.default ?? (f.type === "boolean" ? true : "")]));
+  const filtered = (Array.isArray(data) ? data : []).filter(
     (r: any) =>
       !search ||
-      String(r.name ?? "")
+      String(r?.name ?? "")
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
@@ -127,7 +130,7 @@ export function CrudPage({
         <table className="mobile-table w-full text-sm">
           <thead className="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              {columns.map((c) => (
+              {safeColumns.map((c) => (
                 <th key={c.label} className={"px-4 py-3 font-medium " + (c.className ?? "")}>
                   {c.label}
                 </th>
@@ -138,7 +141,7 @@ export function CrudPage({
           <tbody>
             {isLoading && (
               <tr>
-                <td className="px-4 py-6 text-muted-foreground" colSpan={columns.length + 1}>
+                <td className="px-4 py-6 text-muted-foreground" colSpan={safeColumns.length + 1}>
                   Carregando...
                 </td>
               </tr>
@@ -146,22 +149,47 @@ export function CrudPage({
             {!isLoading && filtered.length === 0 && (
               <tr>
                 <td
-                  className="px-4 py-10 text-center text-muted-foreground"
-                  colSpan={columns.length + 1}
+                  className="px-4 py-12 text-center"
+                  colSpan={safeColumns.length + 1}
                 >
-                  Nenhum registro ainda.
+                  <div className="mx-auto flex max-w-sm flex-col items-center justify-center text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                      <Plus className="h-6 w-6" />
+                    </div>
+                    <p className="mt-3 font-medium text-foreground">
+                      {search
+                        ? `Nenhum ${singular} encontrado para "${search}"`
+                        : `Nenhum(a) ${singular} cadastrado(a) ainda`}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {search
+                        ? "Verifique a digitação ou limpe o campo de busca para ver todos os itens."
+                        : `Comece cadastrando seu primeiro ${singular} para organizar a gestão da barbearia.`}
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      {search ? (
+                        <Button size="sm" variant="outline" onClick={() => setSearch("")}>
+                          Limpar busca
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setEditing(blank())}>
+                          <Plus className="mr-1.5 h-3.5 w-3.5" /> Novo {singular}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
             {filtered.map((row: any) => (
-              <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30">
-                {columns.map((c) => (
+              <tr key={row?.id ?? Math.random()} className="border-b last:border-0 hover:bg-muted/30">
+                {safeColumns.map((c) => (
                   <td
                     key={c.label}
                     data-label={c.label}
                     className={"px-4 py-3 " + (c.className ?? "")}
                   >
-                    {c.render(row)}
+                    {c.render?.(row)}
                   </td>
                 ))}
                 <td data-label="Ações" className="whitespace-nowrap px-2 py-2 text-right">
@@ -205,56 +233,63 @@ export function CrudPage({
                 save.mutate(editing);
               }}
             >
-              {fields.map((f) => (
-                <div
-                  key={f.key}
-                  className={f.type === "textarea" || f.type === "boolean" ? "sm:col-span-2" : ""}
-                >
-                  {f.type === "boolean" ? (
-                    <label className="flex items-center gap-2 text-sm">
-                      <Switch
-                        checked={!!editing[f.key]}
-                        onCheckedChange={(v) => setEditing({ ...editing, [f.key]: v })}
-                      />
-                      {f.label}
-                    </label>
-                  ) : (
-                    <>
-                      <Label className="mb-1.5 block">{f.label}</Label>
-                      {f.type === "textarea" ? (
-                        <Textarea
-                          value={editing[f.key] ?? ""}
-                          onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })}
+              {safeFields.map((f) => {
+                const options = (f?.options ?? []).filter((o): o is { value: string; label: string } => Boolean(o));
+                return (
+                  <div
+                    key={f.key}
+                    className={f.type === "textarea" || f.type === "boolean" ? "sm:col-span-2" : ""}
+                  >
+                    {f.type === "boolean" ? (
+                      <label className="flex items-center gap-2 text-sm">
+                        <Switch
+                          checked={!!editing[f.key]}
+                          onCheckedChange={(v) => setEditing({ ...editing, [f.key]: v })}
                         />
-                      ) : f.type === "select" ? (
-                        <Select
-                          value={editing[f.key] ?? ""}
-                          onValueChange={(v) => setEditing({ ...editing, [f.key]: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {f.options!.map((o) => (
-                              <SelectItem key={o.value} value={o.value}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          type={f.type === "number" ? "number" : "text"}
-                          step="0.01"
-                          required={f.required}
-                          value={editing[f.key] ?? ""}
-                          onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
+                        {f.label}
+                      </label>
+                    ) : (
+                      <>
+                        <Label className="mb-1.5 block">{f.label}</Label>
+                        {f.type === "textarea" ? (
+                          <Textarea
+                            value={editing[f.key] ?? ""}
+                            onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })}
+                          />
+                        ) : f.type === "select" ? (
+                          <Select
+                            value={editing[f.key] ? String(editing[f.key]) : undefined}
+                            onValueChange={(v) => setEditing({ ...editing, [f.key]: v })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((o, idx) => {
+                                const val = String(o?.value ?? idx);
+                                const lbl = String(o?.label ?? o?.value ?? `Opção ${idx + 1}`);
+                                return (
+                                  <SelectItem key={val || `opt-${idx}`} value={val || `opt-${idx}`}>
+                                    {lbl}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type={f.type === "number" ? "number" : "text"}
+                            step="0.01"
+                            required={f.required}
+                            value={editing[f.key] ?? ""}
+                            onChange={(e) => setEditing({ ...editing, [f.key]: e.target.value })}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </form>
           )}
           <DialogFooter>

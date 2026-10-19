@@ -57,10 +57,20 @@ export function AppShell({ children }: { children: ReactNode }) {
     },
   });
   async function signOut() {
-    await logAudit("Saiu do sistema");
-    await qc.cancelQueries();
+    try {
+      await logAudit("Saiu do sistema");
+    } catch {
+      // audit failure ignored
+    }
+    try {
+      localStorage.removeItem("belezi_preview_authenticated");
+      localStorage.removeItem("belezi_preview_user");
+    } catch {
+      // localStorage failure ignored
+    }
+    await qc.cancelQueries().catch(() => {});
     qc.clear();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut().catch(() => {});
     navigate({ to: "/", replace: true });
   }
   return (

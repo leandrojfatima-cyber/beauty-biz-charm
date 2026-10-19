@@ -227,16 +227,28 @@ function AgendaInteligentePage() {
   const { data: appts = [] } = useQuery<AppointmentRecord[]>({
     queryKey: ["appointments", queryDateRange.start, queryDateRange.end],
     queryFn: async () => {
-      const query = db
-        .from("appointments")
-        .select("*")
-        .gte("starts_at", queryDateRange.start)
-        .lte("starts_at", queryDateRange.end)
-        .order("starts_at");
+      try {
+        const query = db
+          .from("appointments")
+          .select("*")
+          .gte("starts_at", queryDateRange.start)
+          .lte("starts_at", queryDateRange.end)
+          .order("starts_at");
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []) as AppointmentRecord[];
+        const { data, error } = await query;
+        if (!error && Array.isArray(data)) {
+          return data as AppointmentRecord[];
+        }
+        if (error) {
+          console.warn("[Agenda] Consulta de agendamentos avisou:", error.message);
+          const { data: fallbackData } = await db.from("appointments").select("*").limit(500);
+          if (Array.isArray(fallbackData)) return fallbackData as AppointmentRecord[];
+        }
+        return [];
+      } catch (err) {
+        console.warn("[Agenda] Exceção ao consultar agendamentos:", err);
+        return [];
+      }
     },
   });
 

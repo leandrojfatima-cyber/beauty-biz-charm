@@ -1,5 +1,6 @@
 export type AppointmentStatus =
   | "agendado"
+  | "confirmado"
   | "em_andamento"
   | "concluido"
   | "cancelado"
@@ -46,7 +47,7 @@ export interface AppointmentWithDetails extends AppointmentRecord {
   };
 }
 
-export type AgendaViewMode = "daily" | "weekly" | "monthly";
+export type AgendaViewMode = "daily" | "grid" | "weekly" | "monthly";
 
 export interface ConflictCheckResult {
   hasConflict: boolean;

@@ -58,14 +58,14 @@ export const Route = createFileRoute("/_authenticated/servicos")({
             render: (r) => (
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold">{r.name}</span>
-                  {r.highlight && (
+                  <span className="font-semibold">{r?.name ?? "Serviço"}</span>
+                  {r?.highlight && (
                     <Badge variant="outline" className="text-[9px] text-amber-500 border-amber-500/40">
                       <Star className="h-2.5 w-2.5 fill-amber-500 mr-0.5 inline" /> Destaque
                     </Badge>
                   )}
                 </div>
-                {r.description && (
+                {r?.description && (
                   <p className="text-[11px] text-muted-foreground line-clamp-1">{r.description}</p>
                 )}
               </div>
@@ -73,13 +73,13 @@ export const Route = createFileRoute("/_authenticated/servicos")({
           },
           {
             label: "Categoria",
-            render: (r) => CATS.find((c) => c.value === r.category)?.label ?? r.category,
+            render: (r) => CATS.find((c) => c.value === r?.category)?.label ?? r?.category ?? "—",
           },
-          { label: "Duração", render: (r) => `${r.duration_min} min` },
-          { label: "Preço", render: (r) => brl(r.price), className: "text-right font-medium" },
+          { label: "Duração", render: (r) => `${r?.duration_min ?? 0} min` },
+          { label: "Preço", render: (r) => brl(r?.price ?? 0), className: "text-right font-medium" },
           {
             label: "Comissão",
-            render: (r) => `${Number(r.commission_pct)}%`,
+            render: (r) => `${Number(r?.commission_pct ?? 0)}%`,
             className: "text-right",
           },
         ]}
