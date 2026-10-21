@@ -26,9 +26,14 @@ import {
   Calendar,
   Lock,
   Unlock,
+  Star,
+  Bell,
+  ThumbsUp,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Stat } from "@/components/AppShell";
+import { useProfessionals, useServices } from "@/lib/lookups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,8 +89,19 @@ export const Route = createFileRoute("/_authenticated/automacoes")({
 function AutomacoesPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<
-    "inativos" | "recompra" | "aniversarios" | "cobranca" | "faltas" | "templates" | "logs"
-  >("inativos");
+    | "lembretes"
+    | "pos_atendimento"
+    | "inativos"
+    | "recompra"
+    | "aniversarios"
+    | "cobranca"
+    | "faltas"
+    | "templates"
+    | "logs"
+  >("lembretes");
+  const [inactiveRangeFilter, setInactiveRangeFilter] = useState<
+    "all" | "30_60" | "60_90" | "90_plus"
+  >("all");
 
   const [searchQuery, setSearchQuery] = useState("");
 

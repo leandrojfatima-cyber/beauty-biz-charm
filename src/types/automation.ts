@@ -5,7 +5,8 @@ export type AutomationTriggerType =
   | "cobranca_plano"
   | "recuperacao_inativo"
   | "recompra_produto"
-  | "aviso_falta";
+  | "aviso_falta"
+  | "pos_atendimento";
 
 export interface AutomationTemplates {
   lembrete?: string;

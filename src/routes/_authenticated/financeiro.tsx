@@ -59,6 +59,16 @@ import {
   FINANCIAL_CATEGORY_LABELS,
   PAYMENT_METHOD_LABELS,
 } from "@/lib/financial-engine";
+import {
+  loadPodiumPayRates,
+  savePodiumPayRates,
+  loadPodiumReceivables,
+  executeAnticipation,
+  simulateAnticipation,
+  calculatePaymentSplit,
+  type PodiumPayRates,
+  type FutureReceivable,
+} from "@/services/payments";
 import type {
   FinancialCategory,
   FinancialTransactionRecord,
@@ -86,11 +96,21 @@ function FinanceiroPage() {
   const [month, setMonth] = useState(currentMonth());
   const { start, end } = monthRange(month);
 
-  const [activeTab, setActiveTab] = useState<"fluxo" | "lancamentos" | "previsao">("fluxo");
+  const [activeTab, setActiveTab] = useState<
+    "fluxo" | "lancamentos" | "previsao" | "podium_pay"
+  >("fluxo");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Podium Pay State
+  const [podiumRates, setPodiumRates] = useState<PodiumPayRates>(() => loadPodiumPayRates());
+  const [receivables, setReceivables] = useState<FutureReceivable[]>(() => loadPodiumReceivables());
+  const [selectedReceivables, setSelectedReceivables] = useState<string[]>([]);
+  const [simAmount, setSimAmount] = useState<number>(120);
+  const [simCommissionPct, setSimCommissionPct] = useState<number>(50);
+  const [simMethod, setSimMethod] = useState<string>("Pix");
 
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState<TransactionType>("receita");
@@ -456,7 +476,7 @@ function FinanceiroPage() {
 
       {/* Navegação por Abas Principais */}
       <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 max-w-md">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-2xl">
           <TabsTrigger value="fluxo" className="gap-1.5 text-xs sm:text-sm">
             <PieChart className="h-4 w-4" />
             Fluxo Diário
@@ -467,7 +487,14 @@ function FinanceiroPage() {
           </TabsTrigger>
           <TabsTrigger value="previsao" className="gap-1.5 text-xs sm:text-sm">
             <Clock className="h-4 w-4" />
-            Contas Previstas ({pendingTransactions.length})
+            Previstas ({pendingTransactions.length})
+          </TabsTrigger>
+          <TabsTrigger
+            value="podium_pay"
+            className="gap-1.5 text-xs sm:text-sm text-[#FF6500] font-semibold data-[state=active]:bg-[#FF6500]/10 data-[state=active]:text-[#FF6500]"
+          >
+            <CreditCard className="h-4 w-4 text-[#FF6500]" />
+            Podium Pay & Split
           </TabsTrigger>
         </TabsList>
 
@@ -806,6 +833,488 @@ function FinanceiroPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ABA 4: PODIUM PAY, SPLIT DE PAGAMENTO E ANTECIPAÇÃO DE RECEBÍVEIS (ETAPA 13) */}
+        <TabsContent value="podium_pay" className="space-y-6">
+          {/* Banner de Status da Conta Digital Podium Pay */}
+          <div className="relative overflow-hidden rounded-2xl border border-[#FF6500]/40 bg-gradient-to-r from-[#0B192C] via-[#0D2440] to-[#1E3E62] p-6 text-white shadow-lg">
+            <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-[#FF6500]/15 blur-3xl pointer-events-none" />
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#FF6500] text-white shadow-lg shadow-[#FF6500]/30 font-black text-xl">
+                  PP
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-xl font-bold tracking-wide text-white">
+                      PODIUM <span className="text-[#FF6500]">PAY</span>
+                    </h3>
+                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[10px]">
+                      Ativo · Split Automático
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-white/80">
+                    Infraestrutura de pagamentos digitais, recebimento Pix na comanda, split entre barbearia/barbeiro e antecipação D+1.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-right">
+                  <span className="text-[10px] text-white/70 uppercase font-semibold block">
+                    Saldo Disponível (Pix)
+                  </span>
+                  <span className="text-xl font-bold text-white">R$ 4.820,00</span>
+                </div>
+                <div className="rounded-xl border border-[#FF6500]/30 bg-[#FF6500]/10 p-3 text-right">
+                  <span className="text-[10px] text-[#FF8C38] uppercase font-semibold block">
+                    A Receber (Cartão D+30)
+                  </span>
+                  <span className="text-xl font-bold text-[#FF6500]">
+                    {brl(
+                      receivables
+                        .filter((r) => r.status === "a_receber")
+                        .reduce((acc, r) => acc + Number(r.amount || 0), 0),
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MÓDULO DE ANTECIPAÇÃO DE RECEBÍVEIS (PODIUM EXPRESS) */}
+          <Card className="border shadow-xs">
+            <CardHeader className="p-4 sm:p-6 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-[#FF6500]" />
+                    Antecipação de Recebíveis Futuros (D+1)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Transforme suas vendas a prazo de cartão de crédito em dinheiro imediato na conta com taxa pro-rata de {podiumRates.anticipationMonthlyRatePct}% a.m.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs border-[#FF6500]/40 text-[#FF6500] self-start sm:self-auto">
+                  Liquidação em 24h úteis
+                </Badge>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+              {/* Simulador de Antecipação Ativa */}
+              {(() => {
+                const targetReceivables =
+                  selectedReceivables.length > 0
+                    ? receivables.filter((r) => selectedReceivables.includes(r.id))
+                    : receivables.filter((r) => r.status === "a_receber");
+                const sim = simulateAnticipation(
+                  targetReceivables,
+                  podiumRates.anticipationMonthlyRatePct,
+                );
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-xl border bg-muted/20">
+                    <div>
+                      <span className="text-[11px] text-muted-foreground uppercase font-semibold block">
+                        Total Bruto Selecionado
+                      </span>
+                      <p className="font-display text-xl font-bold text-foreground mt-0.5">
+                        {brl(sim.totalGross)}
+                      </p>
+                      <span className="text-[10px] text-muted-foreground">
+                        {sim.eligibleCount} títulos elegíveis
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] text-muted-foreground uppercase font-semibold block">
+                        Prazo Médio Restante
+                      </span>
+                      <p className="font-display text-xl font-bold text-foreground mt-0.5">
+                        {sim.averageDaysAnticipated} dias
+                      </p>
+                      <span className="text-[10px] text-muted-foreground">
+                        Taxa: {podiumRates.anticipationMonthlyRatePct}% a.m.
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] text-rose-600 dark:text-rose-400 uppercase font-semibold block">
+                        Desconto de Antecipação
+                      </span>
+                      <p className="font-display text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                        -{brl(sim.totalDiscount)}
+                      </p>
+                      <span className="text-[10px] text-muted-foreground">Custo da operação</span>
+                    </div>
+
+                    <div className="flex flex-col justify-between">
+                      <div>
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold block">
+                          Líquido a Liberar em D+1
+                        </span>
+                        <p className="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          {brl(sim.netAmountToReceive)}
+                        </p>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        disabled={sim.eligibleCount === 0}
+                        className="mt-2 w-full bg-[#FF6500] hover:bg-[#E55B00] text-white font-semibold text-xs gap-1.5 shadow-sm"
+                        onClick={() => {
+                          const ids = targetReceivables.map((r) => r.id);
+                          const result = executeAnticipation(ids);
+                          setReceivables(loadPodiumReceivables());
+                          setSelectedReceivables([]);
+                          toast.success(
+                            `Antecipação solicitada com sucesso! ${brl(result.netTotal)} será creditado em D+1.`,
+                          );
+                        }}
+                      >
+                        ⚡ Antecipar para D+1
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Tabela de Recebíveis Futuros */}
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="mobile-table w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-left w-10">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={
+                            selectedReceivables.length > 0 &&
+                            selectedReceivables.length ===
+                              receivables.filter((r) => r.status === "a_receber").length
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedReceivables(
+                                receivables
+                                  .filter((r) => r.status === "a_receber")
+                                  .map((r) => r.id),
+                              );
+                            } else {
+                              setSelectedReceivables([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left">Comanda / Cliente</th>
+                      <th className="px-4 py-3 text-left">Data da Venda</th>
+                      <th className="px-4 py-3 text-left">Vencimento Original</th>
+                      <th className="px-4 py-3 text-left">Forma de Pagamento</th>
+                      <th className="px-4 py-3 text-right">Valor Bruto</th>
+                      <th className="px-4 py-3 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receivables.map((rec) => {
+                      const isPending = rec.status === "a_receber";
+                      const isSelected = selectedReceivables.includes(rec.id);
+
+                      return (
+                        <tr key={rec.id} className="border-b hover:bg-muted/20">
+                          <td className="px-4 py-3">
+                            {isPending ? (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedReceivables([...selectedReceivables, rec.id]);
+                                  } else {
+                                    setSelectedReceivables(
+                                      selectedReceivables.filter((id) => id !== rec.id),
+                                    );
+                                  }
+                                }}
+                                className="rounded border-gray-300"
+                              />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            )}
+                          </td>
+                          <td data-label="Cliente" className="px-4 py-3 font-medium">
+                            <div>{rec.clientName}</div>
+                            <span className="text-xs text-muted-foreground">
+                              Comanda #{rec.orderNumber}
+                            </span>
+                          </td>
+                          <td data-label="Data Venda" className="px-4 py-3 text-xs text-muted-foreground">
+                            {fmtDate(rec.date)}
+                          </td>
+                          <td data-label="Vencimento" className="px-4 py-3 font-semibold text-xs">
+                            {fmtDate(rec.dueDate)}
+                          </td>
+                          <td data-label="Forma" className="px-4 py-3 text-xs">
+                            <Badge variant="outline">{rec.paymentMethod}</Badge>
+                          </td>
+                          <td data-label="Valor" className="px-4 py-3 text-right font-bold text-foreground">
+                            {brl(rec.amount)}
+                          </td>
+                          <td data-label="Status" className="px-4 py-3 text-center">
+                            {rec.status === "a_receber" && (
+                              <Badge variant="outline" className="border-blue-500/40 text-blue-600 bg-blue-500/10 text-xs">
+                                A Receber (D+30)
+                              </Badge>
+                            )}
+                            {rec.status === "antecipado" && (
+                              <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-xs">
+                                Antecipado (D+1)
+                              </Badge>
+                            )}
+                            {rec.status === "liquidado" && (
+                              <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-xs">
+                                Liquidado
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* GESTÃO DE TAXAS E POLÍTICA DE SPLIT */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Configuração de Taxas Podium Pay */}
+            <Card className="border shadow-xs">
+              <CardHeader className="p-4 sm:p-6 pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-primary" />
+                  Taxas de Transação Podium Pay
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Defina as taxas acordadas para processamento de pagamentos e política de dedução
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <Label className="text-xs">Taxa Pix (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="h-8 text-xs mt-1"
+                      value={podiumRates.pixFeePct}
+                      onChange={(e) =>
+                        setPodiumRates({ ...podiumRates, pixFeePct: Number(e.target.value || 0) })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Taxa Cartão Débito (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="h-8 text-xs mt-1"
+                      value={podiumRates.debitoFeePct}
+                      onChange={(e) =>
+                        setPodiumRates({
+                          ...podiumRates,
+                          debitoFeePct: Number(e.target.value || 0),
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Cartão Crédito à Vista (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="h-8 text-xs mt-1"
+                      value={podiumRates.creditoVistaFeePct}
+                      onChange={(e) =>
+                        setPodiumRates({
+                          ...podiumRates,
+                          creditoVistaFeePct: Number(e.target.value || 0),
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Cartão Parcelado 2x-6x (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="h-8 text-xs mt-1"
+                      value={podiumRates.creditoParceladoFeePct}
+                      onChange={(e) =>
+                        setPodiumRates({
+                          ...podiumRates,
+                          creditoParceladoFeePct: Number(e.target.value || 0),
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Taxa Antecipação (% a.m.)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      className="h-8 text-xs mt-1"
+                      value={podiumRates.anticipationMonthlyRatePct}
+                      onChange={(e) =>
+                        setPodiumRates({
+                          ...podiumRates,
+                          anticipationMonthlyRatePct: Number(e.target.value || 0),
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Política de Taxa no Split</Label>
+                    <Select
+                      value={podiumRates.feePolicy}
+                      onValueChange={(v: any) =>
+                        setPodiumRates({ ...podiumRates, feePolicy: v })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="salon_absorbs">Salão absorve 100%</SelectItem>
+                        <SelectItem value="proportional">Divisão proporcional</SelectItem>
+                        <SelectItem value="split_half">50% Salão / 50% Equipe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    savePodiumPayRates(podiumRates);
+                    toast.success("Taxas e regras do Podium Pay atualizadas!");
+                  }}
+                >
+                  Salvar Parâmetros de Pagamento
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Simulador de Split de Pagamento */}
+            <Card className="border shadow-xs">
+              <CardHeader className="p-4 sm:p-6 pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-emerald-600" />
+                  Simulador de Split (Barbearia vs Barbeiro)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Teste em tempo real como o valor é dividido para qualquer serviço ou produto
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <Label className="text-xs">Valor Total (R$)</Label>
+                    <Input
+                      type="number"
+                      className="h-8 text-xs mt-1"
+                      value={simAmount}
+                      onChange={(e) => setSimAmount(Number(e.target.value || 0))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Comissão Barbeiro (%)</Label>
+                    <Input
+                      type="number"
+                      className="h-8 text-xs mt-1"
+                      value={simCommissionPct}
+                      onChange={(e) => setSimCommissionPct(Number(e.target.value || 0))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Forma de Pagamento</Label>
+                    <Select value={simMethod} onValueChange={setSimMethod}>
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pix">Pix ({podiumRates.pixFeePct}%)</SelectItem>
+                        <SelectItem value="Cartão de débito">
+                          Débito ({podiumRates.debitoFeePct}%)
+                        </SelectItem>
+                        <SelectItem value="Cartão de crédito">
+                          Crédito 1x ({podiumRates.creditoVistaFeePct}%)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Resultado do Split Simulado */}
+                {(() => {
+                  const items: any = [
+                    {
+                      qty: 1,
+                      unit_price: simAmount,
+                      commission_pct: simCommissionPct,
+                      professional_id: "p1",
+                      professional_name: "Barbeiro Demonstração",
+                    },
+                  ];
+                  const split = calculatePaymentSplit(items, simAmount, simMethod, podiumRates);
+
+                  return (
+                    <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
+                      <div className="flex justify-between font-semibold border-b pb-2">
+                        <span>Valor Bruto da Venda:</span>
+                        <span>{brl(split.grossTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Taxa do Gateway ({split.feePct}%):</span>
+                        <span className="text-rose-600 font-medium">-{brl(split.feeAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Total Líquido Gerado:</span>
+                        <span className="font-semibold text-foreground">{brl(split.netTotal)}</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t font-medium">
+                        <div className="p-2 rounded-lg bg-card border">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Salão / Barbearia
+                          </span>
+                          <span className="font-display text-base font-bold text-primary mt-0.5 block">
+                            {brl(split.salonNet)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Taxa absorvida: {brl(split.salonFeeShare)}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-card border">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Barbeiro / Comissão
+                          </span>
+                          <span className="font-display text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                            {brl(split.professionals[0]?.netCommission ?? 0)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Taxa absorvida: {brl(split.professionals[0]?.feeShare ?? 0)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

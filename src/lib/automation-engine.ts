@@ -42,6 +42,8 @@ export const DEFAULT_AUTOMATION_SETTINGS: AutomationSettingsData = {
       "Fala {{cliente}}! Seu produto {{produto}} já deve estar no finalzinho. 🧴 Passa aqui na {{barbearia}} para repor ou peça pelo WhatsApp!",
     falta_aviso:
       "Olá, {{cliente}}. Notamos que você não pôde comparecer ao agendamento de {{data}} na {{barbearia}}. Para reagendar sem pendências, entre em contato conosco.",
+    pos_atendimento:
+      "Olá, {{cliente}}! ⭐ Como foi seu atendimento hoje na {{barbearia}} com {{barbeiro}}? Dê uma nota de 1 a 5 para nossa equipe e garanta 10% de desconto no próximo retorno!",
   },
 };
 
@@ -121,6 +123,8 @@ export function buildAutomatedWhatsAppMessage(
       template = defaultTemplates.recompra_produto!;
     } else if (triggerType === "aviso_falta") {
       template = defaultTemplates.falta_aviso!;
+    } else if (triggerType === "pos_atendimento") {
+      template = defaultTemplates.pos_atendimento!;
     } else {
       template = "Olá {{cliente}}, mensagem da barbearia {{barbearia}}.";
     }
