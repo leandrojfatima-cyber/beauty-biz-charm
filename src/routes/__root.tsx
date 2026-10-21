@@ -80,19 +80,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Belezi — Gestão para cabeleireiros e manicures" },
+      { title: "NEXADASH — Sistemas Inteligentes" },
       {
         name: "description",
-        content: "Agenda, comandas, comissões, estoque e financeiro do seu salão em um só lugar.",
+        content:
+          "NEXADASH Sistemas Inteligentes — Gestão empresarial integrada, controle de assinaturas, inteligência executiva e automação operacional para barbearias e salões com o módulo BELEZI.",
       },
-      { name: "theme-color", content: "#0F172A" },
+      { name: "theme-color", content: "#0B192C" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Belezi" },
+      { name: "apple-mobile-web-app-title", content: "NEXADASH" },
+      { property: "og:title", content: "NEXADASH — Sistemas Inteligentes" },
+      {
+        property: "og:description",
+        content:
+          "Plataforma completa de sistemas inteligentes, gestão de contratos, inteligência executiva e controle operacional.",
+      },
+      { property: "og:image", content: "/assets/aistudio/avatar_9eef1d34.png" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "NEXADASH — Sistemas Inteligentes" },
+      { name: "twitter:image", content: "/assets/aistudio/avatar_9eef1d34.png" },
     ],
     links: [
       {
@@ -100,7 +109,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "manifest", href: "/manifest.json" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", href: "/assets/aistudio/avatar_9eef1d34.png" },
+      { rel: "icon", href: "/assets/aistudio/avatar_9eef1d34.png", type: "image/png" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

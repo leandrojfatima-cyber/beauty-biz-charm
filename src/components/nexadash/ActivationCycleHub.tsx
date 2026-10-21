@@ -758,8 +758,12 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
       <div className="rounded-xl border border-[#1E3E62] bg-[#0B192C] p-5 text-white shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF6500] text-white shadow-md shadow-[#FF6500]/20">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="flex h-13 w-13 shrink-0 items-center justify-center rounded-xl bg-white p-0.5 shadow-md border border-white/20">
+              <img
+                src="/assets/aistudio/avatar_9eef1d34.png"
+                alt="NEXADASH — Sistemas Inteligentes"
+                className="h-full w-full object-contain rounded-lg"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

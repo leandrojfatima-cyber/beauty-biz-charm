@@ -66,14 +66,23 @@ export function AccessActivationGate({
       <div className="flex min-h-[85vh] items-center justify-center p-4">
         <div className="w-full max-w-xl rounded-2xl border border-rose-500/30 bg-card p-6 shadow-xl sm:p-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600">
-              <ShieldAlert className="h-6 w-6" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-0.5 shadow-md border border-[#1E3E62]/20">
+              <img
+                src="/assets/aistudio/avatar_9eef1d34.png"
+                alt="NEXADASH — Sistemas Inteligentes"
+                className="h-full w-full object-contain rounded-lg"
+              />
             </div>
             <div>
-              <Badge variant="destructive" className="text-xs font-semibold uppercase tracking-wider">
-                Acesso Temporariamente Suspenso
-              </Badge>
-              <h2 className="mt-1 font-display text-xl font-bold text-foreground">
+              <div className="flex items-center gap-2">
+                <span className="font-display font-black tracking-wider text-[#0B192C] dark:text-white">
+                  NEXA<span className="text-[#FF6500]">DASH</span>
+                </span>
+                <Badge variant="destructive" className="text-[10px] font-semibold uppercase tracking-wider">
+                  Acesso Suspenso
+                </Badge>
+              </div>
+              <h2 className="mt-0.5 font-display text-lg font-bold text-foreground">
                 Deliberação Administrativa NEXADASH
               </h2>
             </div>
@@ -143,8 +152,12 @@ export function AccessActivationGate({
         {/* Cabeçalho Institucional NEXADASH */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B192C] to-[#1E3E62] text-white shadow-md">
-              <Lock className="h-6 w-6 text-[#FF6500]" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-0.5 shadow-md border border-[#1E3E62]/20">
+              <img
+                src="/assets/aistudio/avatar_9eef1d34.png"
+                alt="NEXADASH — Sistemas Inteligentes"
+                className="h-full w-full object-contain rounded-lg"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

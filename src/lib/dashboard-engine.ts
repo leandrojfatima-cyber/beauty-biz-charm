@@ -883,6 +883,7 @@ export function dashboardCsvRows(analytics: ReturnType<typeof calculateDashboard
   if (!analytics) return [["Sem dados para o período"]];
   return [
     ["Relatório Executivo Belezi"],
+    ["Faturamento", analytics.revenue ?? 0],
     ["Faturamento Realizado", analytics.revenue ?? 0],
     ["Faturamento Previsto", analytics.projectedRevenue ?? (analytics.revenue ?? 0)],
     ["Despesas Operacionais", analytics.expenses ?? 0],

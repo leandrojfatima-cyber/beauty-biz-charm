@@ -75,10 +75,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
   return (
     <div className="app-shell min-h-screen bg-background md:flex">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b bg-sidebar px-3 py-1.5 text-sidebar-foreground md:hidden">
-        <span className="font-display text-lg font-semibold text-sidebar-accent-foreground">
-          Belezi<span className="text-sidebar-primary">.</span>
-        </span>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center border-b bg-sidebar px-3 py-2 text-sidebar-foreground md:hidden">
+        <div className="flex items-center gap-2">
+          <img
+            src="/assets/aistudio/avatar_9eef1d34.png"
+            alt="NEXADASH — Sistemas Inteligentes"
+            className="h-7 w-7 rounded-md object-contain bg-white p-0.5 shrink-0 shadow-xs"
+          />
+          <span className="font-display text-sm font-bold text-sidebar-accent-foreground">
+            NEXA<span className="text-[#FF6500]">DASH</span>
+            <span className="text-xs font-normal text-sidebar-foreground/60 ml-1.5">· Belezi</span>
+          </span>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -95,11 +103,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           open ? "flex" : "hidden",
         )}
       >
-        <div className="hidden px-6 py-6 md:block">
-          <span className="font-display text-xl font-semibold text-sidebar-accent-foreground">
-            Belezi<span className="text-sidebar-primary">.</span>
-          </span>
-          <p className="text-xs text-sidebar-foreground/60">Sistema de Agendamento Online</p>
+        <div className="hidden px-5 py-5 md:block border-b border-sidebar-border/40">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/assets/aistudio/avatar_9eef1d34.png"
+              alt="NEXADASH — Sistemas Inteligentes"
+              className="h-10 w-10 rounded-xl object-contain bg-white p-0.5 shadow-sm border border-white/20 shrink-0"
+            />
+            <div className="min-w-0">
+              <span className="font-display text-base font-extrabold tracking-wide text-sidebar-accent-foreground block truncate">
+                NEXA<span className="text-[#FF6500]">DASH</span>
+              </span>
+              <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/70 font-semibold truncate">
+                Sistemas Inteligentes
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 rounded-md bg-sidebar-accent/50 px-2.5 py-1 text-[11px] text-sidebar-foreground/80 flex items-center justify-between">
+            <span className="font-medium">Módulo Barbearia</span>
+            <span className="text-[10px] text-primary font-bold">BELEZI</span>
+          </div>
         </div>
         <nav className="grid flex-1 grid-cols-2 gap-0.5 px-2 py-1 md:block md:space-y-0.5 md:px-3 md:py-2">
           {nav.map(({ to, label, icon: Icon }) => (
@@ -139,9 +162,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <LogOut className="h-4 w-4" /> Sair
         </Button>
-        <p className="px-6 pb-4 text-[10px] leading-tight text-sidebar-foreground/50">
-          Belezi © 2026 · Desenvolvido e comercializado por NEXADASH
-        </p>
+        <div className="px-5 pb-4 pt-2 border-t border-sidebar-border/30">
+          <div className="flex items-center gap-2 text-[10px] text-sidebar-foreground/60">
+            <img
+              src="/assets/aistudio/avatar_9eef1d34.png"
+              alt="NEXADASH"
+              className="h-4 w-4 rounded-xs object-contain bg-white/90 p-0.5 shrink-0"
+            />
+            <span className="truncate">NEXADASH — Sistemas Inteligentes © 2026</span>
+          </div>
+        </div>
       </aside>
       <main className="min-w-0 flex-1 p-2.5 md:p-8">{children}</main>
     </div>

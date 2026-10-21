@@ -26,6 +26,8 @@ import {
   CalendarDays,
   CalendarRange,
   Columns,
+  Grid3X3,
+  CheckCheck,
   Sparkles,
   ShieldCheck,
   Coffee,
@@ -165,6 +167,67 @@ function getMonthDays(year: number, month: number): { dateStr: string; dayNumber
   return days;
 }
 
+export const PRO_COLOR_PALETTES = [
+  {
+    name: "Azul Real",
+    border: "border-l-blue-500",
+    headerBorder: "border-t-4 border-t-blue-500",
+    badge: "bg-blue-600 text-white",
+    bg: "bg-blue-500/10",
+    text: "text-blue-700 dark:text-blue-300",
+    dot: "bg-blue-500",
+  },
+  {
+    name: "Roxo Imperial",
+    border: "border-l-purple-500",
+    headerBorder: "border-t-4 border-t-purple-500",
+    badge: "bg-purple-600 text-white",
+    bg: "bg-purple-500/10",
+    text: "text-purple-700 dark:text-purple-300",
+    dot: "bg-purple-500",
+  },
+  {
+    name: "Verde Esmeralda",
+    border: "border-l-emerald-500",
+    headerBorder: "border-t-4 border-t-emerald-500",
+    badge: "bg-emerald-600 text-white",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+  },
+  {
+    name: "Âmbar Dourado",
+    border: "border-l-amber-500",
+    headerBorder: "border-t-4 border-t-amber-500",
+    badge: "bg-amber-600 text-white",
+    bg: "bg-amber-500/10",
+    text: "text-amber-700 dark:text-amber-300",
+    dot: "bg-amber-500",
+  },
+  {
+    name: "Ciano Tecnológico",
+    border: "border-l-cyan-500",
+    headerBorder: "border-t-4 border-t-cyan-500",
+    badge: "bg-cyan-600 text-white",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-700 dark:text-cyan-300",
+    dot: "bg-cyan-500",
+  },
+  {
+    name: "Rosa Magenta",
+    border: "border-l-pink-500",
+    headerBorder: "border-t-4 border-t-pink-500",
+    badge: "bg-pink-600 text-white",
+    bg: "bg-pink-500/10",
+    text: "text-pink-700 dark:text-pink-300",
+    dot: "bg-pink-500",
+  },
+];
+
+export function getProTheme(index: number) {
+  return PRO_COLOR_PALETTES[index % PRO_COLOR_PALETTES.length];
+}
+
 function AgendaInteligentePage() {
   const [date, setDate] = useState(todayISO());
   const [viewMode, setViewMode] = useState<AgendaViewMode>("daily");
@@ -200,7 +263,7 @@ function AgendaInteligentePage() {
 
   // Janela de datas a carregar de acordo com o modo de visualização
   const queryDateRange = useMemo(() => {
-    if (viewMode === "daily") {
+    if (viewMode === "daily" || viewMode === "grid") {
       return {
         start: new Date(date + "T00:00:00").toISOString(),
         end: new Date(date + "T23:59:59").toISOString(),
@@ -376,7 +439,8 @@ function AgendaInteligentePage() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["appointments"] });
       const statusLabels: Record<AppointmentStatus, string> = {
-        agendado: "Agendamento reaberto",
+        agendado: "Agendamento registrado",
+        confirmado: "Agendamento confirmado com sucesso!",
         em_andamento: "Atendimento iniciado",
         concluido: "Atendimento concluído com sucesso!",
         cancelado: "Agendamento cancelado",
@@ -549,6 +613,10 @@ function AgendaInteligentePage() {
                 <TabsTrigger value="daily" className="flex items-center gap-1.5 text-xs">
                   <Columns className="h-3.5 w-3.5" />
                   Diária
+                </TabsTrigger>
+                <TabsTrigger value="grid" className="flex items-center gap-1.5 text-xs">
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                  Grade Clássica
                 </TabsTrigger>
                 <TabsTrigger value="weekly" className="flex items-center gap-1.5 text-xs">
                   <CalendarRange className="h-3.5 w-3.5" />
@@ -755,6 +823,7 @@ function AgendaInteligentePage() {
               <SelectContent>
                 <SelectItem value="all">Todos os Status</SelectItem>
                 <SelectItem value="agendado">📅 Agendados</SelectItem>
+                <SelectItem value="confirmado">🟣 Confirmados</SelectItem>
                 <SelectItem value="em_andamento">⏳ Em Atendimento</SelectItem>
                 <SelectItem value="concluido">✅ Concluídos</SelectItem>
                 <SelectItem value="vip">👑 Apenas VIP</SelectItem>
@@ -807,7 +876,8 @@ function AgendaInteligentePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {activePros
             .filter((p) => selectedProId === "all" || p.id === selectedProId)
-            .map((pro) => {
+            .map((pro, proIndex) => {
+              const proTheme = getProTheme(proIndex);
               const workingDetails = getProfessionalWorkingHoursForDate(
                 date,
                 pro,
@@ -820,7 +890,8 @@ function AgendaInteligentePage() {
                 <Card
                   key={pro.id}
                   className={cn(
-                    "flex flex-col border transition-all duration-200",
+                    "flex flex-col border transition-all duration-200 border-t-4",
+                    proTheme.headerBorder,
                     !workingDetails.isWorking && "opacity-75 bg-muted/30 border-dashed",
                   )}
                 >
@@ -828,14 +899,19 @@ function AgendaInteligentePage() {
                   <CardHeader className="p-3.5 border-b bg-card">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar className="h-9 w-9 border">
+                        <Avatar className={cn("h-9 w-9 border ring-2 ring-offset-1", proTheme.badge.replace("bg-", "ring-"))}>
                           <AvatarImage src={pro.photo_url || ""} />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                             {pro.name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{pro.name}</h4>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-semibold text-sm truncate">{pro.name}</h4>
+                            <span className={cn("text-[9px] px-1 py-0 rounded font-semibold", proTheme.bg, proTheme.text)}>
+                              {proTheme.name}
+                            </span>
+                          </div>
                           <p className="text-[11px] text-muted-foreground truncate">{pro.role}</p>
                         </div>
                       </div>
@@ -893,7 +969,10 @@ function AgendaInteligentePage() {
                             key={appt.id}
                             className={cn(
                               "relative rounded-lg border p-3 text-xs shadow-xs transition-all",
-                              appt.status === "agendado" && "bg-card border-l-4 border-l-blue-500 hover:border-blue-400",
+                              appt.status === "agendado" &&
+                                "bg-card border-l-4 border-l-blue-500 hover:border-blue-400",
+                              appt.status === "confirmado" &&
+                                "bg-indigo-500/5 border-l-4 border-l-indigo-500 border-indigo-500/30",
                               appt.status === "em_andamento" &&
                                 "bg-amber-500/5 border-l-4 border-l-amber-500 border-amber-500/30",
                               appt.status === "concluido" &&
@@ -915,6 +994,16 @@ function AgendaInteligentePage() {
                                 {appt.is_vip && (
                                   <Badge className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] px-1.5 py-0 h-4 font-bold flex items-center gap-0.5">
                                     <Sparkles className="h-2.5 w-2.5" /> VIP
+                                  </Badge>
+                                )}
+                                {appt.status === "agendado" && (
+                                  <Badge className="bg-blue-600 text-white text-[10px] px-1.5 py-0 h-4">
+                                    Agendado
+                                  </Badge>
+                                )}
+                                {appt.status === "confirmado" && (
+                                  <Badge className="bg-indigo-600 text-white text-[10px] px-1.5 py-0 h-4 flex items-center gap-0.5">
+                                    <CheckCheck className="h-2.5 w-2.5" /> Confirmado
                                   </Badge>
                                 )}
                                 {appt.status === "em_andamento" && (
@@ -973,6 +1062,29 @@ function AgendaInteligentePage() {
                                 {/* Mudar status de atendimento */}
                                 <div className="flex items-center gap-1">
                                   {appt.status === "agendado" && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 px-1.5 text-[11px] text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                                        title="Confirmar agendamento"
+                                        onClick={() => updateStatus.mutate({ id: appt.id, status: "confirmado" })}
+                                      >
+                                        <CheckCheck className="h-3 w-3 mr-1" /> Confirmar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 px-1.5 text-[11px] text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                        title="Iniciar atendimento"
+                                        onClick={() => updateStatus.mutate({ id: appt.id, status: "em_andamento" })}
+                                      >
+                                        <Play className="h-3 w-3 mr-1" /> Iniciar
+                                      </Button>
+                                    </>
+                                  )}
+
+                                  {appt.status === "confirmado" && (
                                     <Button
                                       size="sm"
                                       variant="ghost"
@@ -1066,6 +1178,226 @@ function AgendaInteligentePage() {
               );
             })}
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODO GRID: GRADE CLÁSSICA DE HORÁRIOS POR PROFISSIONAL */}
+      {/* ========================================================================= */}
+      {viewMode === "grid" && activePros.length > 0 && (
+        <Card className="border overflow-hidden">
+          <CardHeader className="p-4 border-b bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Grid3X3 className="h-4 w-4 text-primary" />
+                  Grade de Horários & Ocupação do Dia
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Visualização em matriz temporal: horários x profissionais com mapeamento de cores dinâmicas.
+                </CardDescription>
+              </div>
+
+              {/* Legenda de Cores de Status da Grade */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="flex items-center gap-1 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" /> Agendado
+                </span>
+                <span className="flex items-center gap-1 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" /> Confirmado
+                </span>
+                <span className="flex items-center gap-1 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Em Atendimento
+                </span>
+                <span className="flex items-center gap-1 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Concluído
+                </span>
+                <span className="flex items-center gap-1 font-medium text-muted-foreground">
+                  <span className="h-2.5 w-2.5 rounded-full bg-slate-400" /> Bloqueado
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs min-w-[700px]">
+              <thead>
+                <tr className="border-b bg-muted/60 text-muted-foreground">
+                  <th className="p-3 w-20 text-center font-bold uppercase tracking-wider text-[11px] border-r">
+                    Horário
+                  </th>
+                  {activePros
+                    .filter((p) => selectedProId === "all" || p.id === selectedProId)
+                    .map((pro, idx) => {
+                      const theme = getProTheme(idx);
+                      const working = getProfessionalWorkingHoursForDate(
+                        date,
+                        pro,
+                        salonSettings?.business_hours,
+                      );
+                      return (
+                        <th
+                          key={pro.id}
+                          className={cn(
+                            "p-3 border-r last:border-r-0 min-w-[170px] border-t-4",
+                            theme.headerBorder,
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", theme.dot)} />
+                              <div>
+                                <p className="font-bold text-foreground text-xs">{pro.name}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {working.isWorking ? `${working.start} – ${working.end}` : "Folga"}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 text-primary hover:bg-primary/10"
+                              title={`Novo agendamento com ${pro.name}`}
+                              onClick={() => openNewAppointment("10:00", pro.id)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </th>
+                      );
+                    })}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  "08:00",
+                  "09:00",
+                  "10:00",
+                  "11:00",
+                  "12:00",
+                  "13:00",
+                  "14:00",
+                  "15:00",
+                  "16:00",
+                  "17:00",
+                  "18:00",
+                  "19:00",
+                  "20:00",
+                ].map((hour) => {
+                  const hourNum = parseInt(hour.slice(0, 2), 10);
+
+                  return (
+                    <tr key={hour} className="hover:bg-muted/10 transition-colors">
+                      <td className="p-3 text-center font-bold text-muted-foreground border-r bg-muted/20 text-xs">
+                        {hour}
+                      </td>
+
+                      {activePros
+                        .filter((p) => selectedProId === "all" || p.id === selectedProId)
+                        .map((pro) => {
+                          // Encontrar agendamentos que iniciam nesta hora
+                          const slotAppts = filteredAppts.filter((a) => {
+                            if (a.professional_id !== pro.id) return false;
+                            const aDate = a.starts_at.slice(0, 10);
+                            if (aDate !== date) return false;
+                            const starts = new Date(a.starts_at);
+                            return starts.getHours() === hourNum;
+                          });
+
+                          return (
+                            <td
+                              key={pro.id}
+                              className="p-2 border-r last:border-r-0 align-top h-20 transition-colors hover:bg-muted/20 relative group"
+                            >
+                              {slotAppts.length > 0 ? (
+                                <div className="space-y-1.5">
+                                  {slotAppts.map((appt) => {
+                                    const client = getClient(appt.client_id);
+                                    const service = getService(appt.service_id);
+
+                                    return (
+                                      <div
+                                        key={appt.id}
+                                        onClick={() => openEditAppointment(appt)}
+                                        className={cn(
+                                          "p-2 rounded-lg border text-left cursor-pointer transition-all shadow-2xs space-y-1",
+                                          appt.status === "agendado" &&
+                                            "bg-blue-500/10 border-l-4 border-l-blue-500 hover:border-blue-400 text-blue-900 dark:text-blue-100",
+                                          appt.status === "confirmado" &&
+                                            "bg-indigo-500/10 border-l-4 border-l-indigo-500 hover:border-indigo-400 text-indigo-900 dark:text-indigo-100",
+                                          appt.status === "em_andamento" &&
+                                            "bg-amber-500/15 border-l-4 border-l-amber-500 border-amber-500/40 text-amber-900 dark:text-amber-100 animate-pulse",
+                                          appt.status === "concluido" &&
+                                            "bg-emerald-500/10 border-l-4 border-l-emerald-500 text-emerald-900 dark:text-emerald-100 opacity-90",
+                                          appt.status === "cancelado" &&
+                                            "bg-muted/40 border-l-4 border-l-destructive line-through opacity-50",
+                                          appt.is_blocked &&
+                                            "bg-slate-500/15 border-l-4 border-l-slate-500 text-slate-800 dark:text-slate-200",
+                                          appt.is_vip && "border-r-2 border-r-purple-500 shadow-purple-500/10",
+                                        )}
+                                      >
+                                        <div className="flex items-center justify-between gap-1 text-[10px]">
+                                          <span className="font-bold flex items-center gap-1">
+                                            <Clock className="h-3 w-3 opacity-70" />
+                                            {fmtTime(appt.starts_at)}
+                                          </span>
+                                          {appt.status === "agendado" && (
+                                            <Badge className="bg-blue-600 text-white text-[9px] px-1 py-0 h-3.5">
+                                              Agendado
+                                            </Badge>
+                                          )}
+                                          {appt.status === "confirmado" && (
+                                            <Badge className="bg-indigo-600 text-white text-[9px] px-1 py-0 h-3.5">
+                                              Confirmado
+                                            </Badge>
+                                          )}
+                                          {appt.status === "em_andamento" && (
+                                            <Badge className="bg-amber-500 text-white text-[9px] px-1 py-0 h-3.5">
+                                              Atendendo
+                                            </Badge>
+                                          )}
+                                          {appt.status === "concluido" && (
+                                            <Badge className="bg-emerald-600 text-white text-[9px] px-1 py-0 h-3.5">
+                                              Concluído
+                                            </Badge>
+                                          )}
+                                        </div>
+
+                                        <p className="font-bold truncate text-[11px]">
+                                          {appt.is_blocked
+                                            ? `🔒 ${appt.block_reason || "Bloqueio"}`
+                                            : client?.name ?? "Cliente sem cadastro"}
+                                        </p>
+
+                                        {!appt.is_blocked && (
+                                          <p className="text-[10px] opacity-80 truncate">
+                                            {service?.name ?? "Serviço"} · {service?.price ? brl(service.price) : ""}
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openNewAppointment(hour, pro.id)}
+                                  className="w-full h-full min-h-[50px] rounded border border-dashed border-transparent hover:border-muted-foreground/30 hover:bg-muted/30 flex items-center justify-center text-muted-foreground/40 hover:text-muted-foreground transition-all group-hover:opacity-100"
+                                >
+                                  <span className="text-[10px] hidden group-hover:inline-flex items-center gap-1">
+                                    <Plus className="h-3 w-3" /> Agendar
+                                  </span>
+                                </button>
+                              )}
+                            </td>
+                          );
+                        })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       )}
 
       {/* ========================================================================= */}

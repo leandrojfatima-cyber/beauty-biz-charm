@@ -555,13 +555,13 @@ function NexadashCommercialHub() {
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-[#FF6500]/10 blur-3xl" />
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
-            {/* LOGO NEXADASH */}
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF6500] to-[#FF8C38] shadow-md shadow-[#FF6500]/20">
-              <svg viewBox="0 0 32 32" className="h-8 w-8 text-white fill-current">
-                <path d="M6 6 L12 6 L22 26 L16 26 Z" />
-                <path d="M20 6 L26 6 L26 26 L20 26 Z" opacity="0.85" />
-                <circle cx="9" cy="23" r="3" fill="#0B192C" />
-              </svg>
+            {/* LOGO OFICIAL NEXADASH */}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white p-1 shadow-lg shadow-black/20 border border-white/20">
+              <img
+                src="/assets/aistudio/avatar_9eef1d34.png"
+                alt="NEXADASH — Sistemas Inteligentes"
+                className="h-full w-full object-contain rounded-xl"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -569,11 +569,11 @@ function NexadashCommercialHub() {
                   NEXA<span className="text-[#FF6500]">DASH</span>
                 </span>
                 <span className="rounded bg-[#FF6500]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FF8C38] border border-[#FF6500]/30">
-                  Assinaturas & Cobranças
+                  Sistemas Inteligentes
                 </span>
               </div>
-              <p className="mt-1 text-xs text-white/70">
-                Gestão Comercial B2B, Contratos de Barbearias, Controle de Inadimplência e Recebimentos
+              <p className="mt-1 text-xs text-white/80">
+                Command Center Comercial B2B · Contratos de Barbearias, Assinaturas e Governança
               </p>
             </div>
           </div>

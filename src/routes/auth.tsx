@@ -173,15 +173,27 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-lg sm:p-8">
         <div className="flex items-center justify-between">
-          <Link to="/" className="inline-block text-2xl font-bold tracking-tight">
-            Belezi<span className="text-primary">.</span>
-          </Link>
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-            SaaS Gestão
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/assets/aistudio/avatar_9eef1d34.png"
+              alt="NEXADASH — Sistemas Inteligentes"
+              className="h-9 w-9 rounded-lg object-contain bg-white p-0.5 shadow-xs border shrink-0"
+            />
+            <div>
+              <span className="font-display font-extrabold text-base tracking-wide text-foreground block leading-none">
+                NEXA<span className="text-[#FF6500]">DASH</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                Sistemas Inteligentes
+              </span>
+            </div>
+          </div>
+          <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase">
+            Belezi
           </span>
         </div>
-        <p className="mt-2 mb-6 text-sm text-muted-foreground">
-          {mode === "in" ? "Entre na sua conta profissional" : "Crie a conta da sua barbearia"}
+        <p className="mt-3 mb-5 text-xs text-muted-foreground">
+          {mode === "in" ? "Acesse seu sistema operacional e financeiro" : "Crie a conta da sua barbearia"}
         </p>
 
         <form onSubmit={submit} className="space-y-4">

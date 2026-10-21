@@ -108,16 +108,25 @@ function Index() {
   return (
     <div className="belezi-home bg-background">
       <header className="home-header flex items-center justify-between gap-3 border-b">
-        <Link
-          to="/"
-          aria-label="Belezi — Página inicial"
-          className="font-display text-xl font-semibold"
-        >
-          Belezi<span className="text-primary">.</span>
-        </Link>
-        <span className="hidden text-xs text-muted-foreground sm:block">
-          Sistema de Agendamento Online
-        </span>
+        <div className="flex items-center gap-3">
+          <img
+            src="/assets/aistudio/avatar_9eef1d34.png"
+            alt="NEXADASH — Sistemas Inteligentes"
+            className="h-9 w-9 rounded-lg object-contain bg-white p-0.5 shadow-xs border shrink-0"
+          />
+          <div className="flex flex-col leading-none">
+            <Link
+              to="/"
+              aria-label="NEXADASH — Sistemas Inteligentes"
+              className="font-display text-base font-extrabold tracking-wide text-foreground"
+            >
+              NEXA<span className="text-[#FF6500]">DASH</span>
+            </Link>
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold mt-0.5">
+              Sistemas Inteligentes · Belezi
+            </span>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button asChild size="sm">
             <Link to="/agendar">
@@ -241,8 +250,16 @@ function Index() {
           })}
         </div>
       </section>
-      <footer className="home-footer text-[10px] text-muted-foreground">
-        Belezi © 2026 · Desenvolvido e comercializado por NEXADASH
+      <footer className="home-footer text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-3 border-t py-6 px-4">
+        <div className="flex items-center gap-2">
+          <img
+            src="/assets/aistudio/avatar_9eef1d34.png"
+            alt="NEXADASH Logo"
+            className="h-5 w-5 rounded object-contain bg-white p-0.5 shrink-0 shadow-xs"
+          />
+          <span>Desenvolvido e operado por <strong>NEXADASH — Sistemas Inteligentes</strong></span>
+        </div>
+        <span>Belezi © 2026 · Todos os direitos reservados</span>
       </footer>
     </div>
   );
