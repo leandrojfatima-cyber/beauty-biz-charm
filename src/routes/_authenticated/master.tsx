@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,6 +27,9 @@ import {
   XCircle,
   RefreshCw,
   Ban,
+  Smartphone,
+  Copy,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -244,7 +247,7 @@ const INITIAL_INVOICES = [
     payment_method: "Pix",
     paid_at: "2026-10-14T14:32:00Z",
     confirmation_notes: "Liquidação confirmada via Pix Banco Inter (E2E-994827103-NX).",
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_link: "https://pix.nexadash.com.br/FAT-2026-088",
   },
   {
     id: "inv-102",
@@ -254,10 +257,10 @@ const INITIAL_INVOICES = [
     amount: 99.90,
     due_date: "2026-10-01",
     status: "recebido",
-    payment_method: "Cartão Mercado Pago",
+    payment_method: "Pix Direto NEXADASH",
     paid_at: "2026-10-01T09:15:00Z",
-    confirmation_notes: "Aprovado automaticamente no Mercado Pago (Transação MP-883921).",
-    payment_link: "https://mpago.la/1i9ivFj",
+    confirmation_notes: "Aprovado via Pix Direto NEXADASH (Transação NX-883921).",
+    payment_link: "https://pix.nexadash.com.br/FAT-2026-089",
   },
   {
     id: "inv-103",
@@ -267,10 +270,10 @@ const INITIAL_INVOICES = [
     amount: 169.00,
     due_date: "2026-10-20",
     status: "pendente",
-    payment_method: "Pix / Mercado Pago",
+    payment_method: "Pix Direto NEXADASH",
     paid_at: null,
     confirmation_notes: null,
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_link: "https://pix.nexadash.com.br/FAT-2026-090",
   },
   {
     id: "inv-104",
@@ -283,7 +286,7 @@ const INITIAL_INVOICES = [
     payment_method: "Boleto / Pix",
     paid_at: null,
     confirmation_notes: null,
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_link: "https://pix.nexadash.com.br/FAT-2026-085",
   },
 ];
 
@@ -297,7 +300,7 @@ const INITIAL_PROPOSALS = [
     conditions: "Desconto promocional de 10% nos primeiros 3 meses + onboarding guiado incluso.",
     status: "enviada",
     valid_until: "2026-10-30",
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_link: "https://pix.nexadash.com.br/PROP-001",
   },
   {
     id: "prop-2",
@@ -308,7 +311,7 @@ const INITIAL_PROPOSALS = [
     conditions: "Valor fixo de R$ 169,00/mês para 2 unidades com treinamento presencial da equipe.",
     status: "aceita",
     valid_until: "2026-10-25",
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_link: "https://pix.nexadash.com.br/PROP-002",
   },
 ];
 
@@ -321,24 +324,18 @@ const STAGES = [
   { id: "perdido", label: "Perdido", color: "bg-zinc-500/10 text-zinc-600 border-zinc-500/20" },
 ];
 
+import { checkIsMaster, MASTER_EMAIL } from "@/lib/master-auth";
+
 function NexadashCommercialHub() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState("activations");
 
-  // Acesso Master
-  const { data: isMasterServer } = useQuery({
+  // Acesso Master estrito (leandro.j.fatima@gmail.com / role master)
+  const { data: isMaster, isLoading: isMasterLoading } = useQuery({
     queryKey: ["is-master"],
-    queryFn: async () => {
-      try {
-        const { data } = await db.rpc("claim_master");
-        return !!data;
-      } catch {
-        return true;
-      }
-    },
+    queryFn: checkIsMaster,
+    staleTime: 30000,
   });
-
-  const isMaster = isMasterServer !== false;
 
   // Estados locais gerenciados
   const [leads, setLeads] = useState(INITIAL_LEADS);
@@ -382,8 +379,8 @@ function NexadashCommercialHub() {
     customer_name: "",
     amount: "59.90",
     due_date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-    payment_method: "Pix / Mercado Pago",
-    payment_link: "https://mpago.la/1i9ivFj",
+    payment_method: "Pix Direto NEXADASH",
+    payment_link: "https://pix.nexadash.com.br/cobranca",
   });
 
   // Métricas Consolidadas de Assinaturas e Recebimentos (Etapa 4)
@@ -548,6 +545,33 @@ function NexadashCommercialHub() {
     toast.success(`Assinatura de ${sub.customer_name} atualizada para: ${newStatus.toUpperCase()}`);
   }
 
+  // Barreira de Segurança Rigorosa: Se não for o Master (leandro.j.fatima@gmail.com), bloqueia imediatamente
+  if (!isMasterLoading && !isMaster) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center p-4 text-center">
+        <div className="mx-auto max-w-md rounded-2xl border border-rose-500/30 bg-card p-6 shadow-md sm:p-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500">
+            <Ban className="h-7 w-7" />
+          </div>
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Acesso Restrito ao Master Administrator
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Esta seção de governança, faturamento e ativação de barbearias da NEXADASH é de uso exclusivo do administrador geral (<code className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground font-mono">{MASTER_EMAIL}</code>).
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground/80">
+            Os barbeiros e clientes utilizam exclusivamente a interface operacional do Belezi.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button asChild className="bg-[#FF6500] text-white hover:bg-[#E55B00]">
+              <Link to="/painel">Voltar ao Painel da Barbearia</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12">
       {/* CABEÇALHO INSTITUCIONAL NEXADASH (Azul-Marinho #0B192C, Laranja #FF6500 e Branco) */}
@@ -603,9 +627,9 @@ function NexadashCommercialHub() {
         </div>
       </div>
 
-      {/* NAVEGAÇÃO ENTRE MÓDULOS DE ASSINATURA, VENDAS E LIBERAÇÃO MANUAL (ETAPAS 3, 4 E 5) */}
+      {/* NAVEGAÇÃO ENTRE MÓDULOS DE ASSINATURA, VENDAS, LIBERAÇÃO E APP DO CLIENTE */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto p-1 bg-muted/60 border">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 h-auto p-1 bg-muted/60 border">
           <TabsTrigger
             value="activations"
             className="data-[state=active]:bg-[#FF6500] data-[state=active]:text-white py-2 text-xs font-semibold shadow-sm"
@@ -615,7 +639,11 @@ function NexadashCommercialHub() {
           </TabsTrigger>
           <TabsTrigger value="subscriptions" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <Receipt className="mr-1.5 h-3.5 w-3.5" />
-            Contratos & Assinaturas ({subscriptions.length})
+            Contratos & Planos ({subscriptions.length})
+          </TabsTrigger>
+          <TabsTrigger value="client_apps" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
+            <Smartphone className="mr-1.5 h-3.5 w-3.5" />
+            App do Cliente & PWA
           </TabsTrigger>
           <TabsTrigger value="billing" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <CreditCard className="mr-1.5 h-3.5 w-3.5" />
@@ -623,11 +651,11 @@ function NexadashCommercialHub() {
           </TabsTrigger>
           <TabsTrigger value="revenue_reports" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
-            Relatórios de Recebimentos
+            Recebimentos
           </TabsTrigger>
           <TabsTrigger value="proposals" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <FileText className="mr-1.5 h-3.5 w-3.5" />
-            Propostas Comerciais ({proposals.length})
+            Propostas ({proposals.length})
           </TabsTrigger>
           <TabsTrigger value="crm" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <Briefcase className="mr-1.5 h-3.5 w-3.5" />
@@ -1145,7 +1173,7 @@ function NexadashCommercialHub() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Pix">Pix (Transferência Instantânea)</SelectItem>
-                    <SelectItem value="Cartão Mercado Pago">Cartão de Crédito (Mercado Pago)</SelectItem>
+                    <SelectItem value="Cartão NEXADASH Pay">Cartão de Crédito Online (NEXADASH Pay)</SelectItem>
                     <SelectItem value="Boleto Compensado">Boleto Bancário Compensado</SelectItem>
                     <SelectItem value="TED / Transferência">TED / Transferência Bancária</SelectItem>
                     <SelectItem value="Dinheiro">Dinheiro em Espécie</SelectItem>
@@ -1157,7 +1185,7 @@ function NexadashCommercialHub() {
                 <Label className="mb-1 block">Código da Transação / Autenticação Bancária *</Label>
                 <Input
                   required
-                  placeholder="Ex: E2E-994827103 ou ID Mercado Pago MP-883921"
+                  placeholder="Ex: E2E-994827103 ou Autenticação Pix Banco Inter"
                   value={paymentDetails.transaction_code}
                   onChange={(e) => setPaymentDetails({ ...paymentDetails, transaction_code: e.target.value })}
                 />

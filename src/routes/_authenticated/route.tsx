@@ -69,21 +69,17 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
+import { checkIsMaster } from "@/lib/master-auth";
+
 function AuthenticatedLayout() {
   const routerState = useRouterState();
   const currentPath = routerState?.location?.pathname ?? "";
 
-  // 1. Verificar se o usuário é Master NEXADASH
+  // 1. Verificar se o usuário é Master NEXADASH (estritamente leandro.j.fatima@gmail.com / role master)
   const { data: isMaster } = useQuery({
     queryKey: ["is-master"],
-    queryFn: async () => {
-      try {
-        const { data } = await db.rpc("claim_master");
-        return !!data;
-      } catch {
-        return false;
-      }
-    },
+    queryFn: checkIsMaster,
+    staleTime: 30000,
   });
 
   // 2. Buscar configurações e status de liberação do salão

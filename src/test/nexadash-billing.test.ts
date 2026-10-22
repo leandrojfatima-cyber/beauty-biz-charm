@@ -94,7 +94,7 @@ describe("NEXADASH Commercial Subscriptions & Billing (Etapa 4)", () => {
       payment_method: "Pix",
       paid_at: "2026-10-14T14:32:00Z",
       confirmation_notes: "Confirmado: Pix Banco Inter - E2E-994827103",
-      payment_link: "https://mpago.la/1i9ivFj",
+      payment_link: "https://pix.nexadash.com.br/FAT-2026-001",
     },
     {
       id: "inv-2",
@@ -104,10 +104,10 @@ describe("NEXADASH Commercial Subscriptions & Billing (Etapa 4)", () => {
       amount: 99.9,
       due_date: "2026-10-25",
       status: "pendente",
-      payment_method: "Cartão de Crédito",
+      payment_method: "Pix Direto NEXADASH",
       paid_at: null,
       confirmation_notes: null,
-      payment_link: "https://mpago.la/1i9ivFj",
+      payment_link: "https://pix.nexadash.com.br/FAT-2026-002",
     },
     {
       id: "inv-3",
@@ -195,13 +195,13 @@ describe("NEXADASH Commercial Subscriptions & Billing (Etapa 4)", () => {
     // Confirmação válida e auditada
     const validAttempt = confirmInvoicePayment(pendingInvoice, {
       paid_at: "2026-10-16",
-      transaction_code: "E2E-MP-77889900",
-      method: "Cartão de Crédito",
-      notes: "Aprovado via Mercado Pago Gateway",
+      transaction_code: "E2E-NX-77889900",
+      method: "Pix Direto NEXADASH",
+      notes: "Aprovado via Gateway Direto NEXADASH",
     });
     expect(validAttempt.success).toBe(true);
     expect(validAttempt.updatedInvoice?.status).toBe("recebido");
-    expect(validAttempt.updatedInvoice?.confirmation_notes).toContain("E2E-MP-77889900");
+    expect(validAttempt.updatedInvoice?.confirmation_notes).toContain("E2E-NX-77889900");
   });
 
   it("handles online payments via payment links and manual payments via Pix/Boleto", () => {

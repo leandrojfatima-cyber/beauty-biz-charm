@@ -225,10 +225,107 @@ function AutomacoesPage() {
     },
   });
 
-  // 8. Detecções Inteligentes
+  // 8. Consultas para Lembretes e Pós-Atendimento
+  const { data: pros = [] } = useProfessionals();
+  const { data: services = [] } = useServices();
+
+  const { data: appointments = [] } = useQuery({
+    queryKey: ["appointments-automation"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await db
+          .from("appointments")
+          .select("*")
+          .order("starts_at", { ascending: true });
+        if (error) return [];
+        return data ?? [];
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  const todayStr = todayISO();
+
+  // Detecção de Lembretes Pré-Atendimento (2 horas antes)
+  const upcomingReminders = useMemo(() => {
+    const todayAppts = appointments.filter((a: any) => {
+      if (!a.starts_at) return false;
+      const apptDate = a.starts_at.slice(0, 10);
+      const isNotDone = a.status !== "cancelado" && a.status !== "bloqueado";
+      return apptDate === todayStr && isNotDone;
+    });
+
+    const now = new Date();
+    return todayAppts.map((a: any) => {
+      const client = clients.find((c: any) => c.id === a.client_id);
+      const pro = pros.find((p: any) => p.id === a.professional_id);
+      const srv = services.find((s: any) => s.id === a.service_id);
+      const starts = new Date(a.starts_at);
+      const diffMs = starts.getTime() - now.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffMinutes = Math.round(diffMs / (1000 * 60));
+
+      const isWithinWindow = diffHours > 0 && diffHours <= (settings.reminder_hours_before || 2);
+      const isPast = diffMinutes < 0;
+
+      return {
+        id: a.id,
+        appointment_id: a.id,
+        client_id: a.client_id,
+        name: client?.name || "Cliente Agendado",
+        phone: client?.phone || "",
+        starts_at: a.starts_at,
+        date: apptDate,
+        time: `${starts.getHours().toString().padStart(2, "0")}:${starts.getMinutes().toString().padStart(2, "0")}`,
+        professional_name: pro?.name || "Barbeiro",
+        service_name: srv?.name || "Corte e Barba",
+        status: a.status,
+        isWithinWindow,
+        isPast,
+        diffMinutes,
+      };
+    });
+  }, [appointments, clients, pros, services, todayStr, settings.reminder_hours_before]);
+
+  // Detecção de Pós-Atendimento (Pesquisa de Satisfação de atendimentos concluídos)
+  const postServiceCandidates = useMemo(() => {
+    const completed = appointments.filter(
+      (a: any) => a.status === "concluido" && a.starts_at,
+    );
+
+    return completed.slice(-30).map((a: any) => {
+      const client = clients.find((c: any) => c.id === a.client_id);
+      const pro = pros.find((p: any) => p.id === a.professional_id);
+      const srv = services.find((s: any) => s.id === a.service_id);
+      const starts = new Date(a.starts_at);
+
+      return {
+        id: a.id,
+        client_id: a.client_id,
+        name: client?.name || "Cliente",
+        phone: client?.phone || "",
+        date: a.starts_at.slice(0, 10),
+        time: `${starts.getHours().toString().padStart(2, "0")}:${starts.getMinutes().toString().padStart(2, "0")}`,
+        professional_name: pro?.name || "Equipe",
+        service_name: srv?.name || "Atendimento",
+      };
+    });
+  }, [appointments, clients, pros, services]);
+
+  // 9. Detecções Inteligentes
   const inactiveCandidates = useMemo(() => {
     return detectInactiveClients(clients, orders, settings.inactive_clients_days);
   }, [clients, orders, settings.inactive_clients_days]);
+
+  const filteredInactiveCandidates = useMemo(() => {
+    return inactiveCandidates.filter((c) => {
+      if (inactiveRangeFilter === "30_60") return c.days_inactive >= 30 && c.days_inactive <= 60;
+      if (inactiveRangeFilter === "60_90") return c.days_inactive > 60 && c.days_inactive <= 90;
+      if (inactiveRangeFilter === "90_plus") return c.days_inactive > 90;
+      return true;
+    });
+  }, [inactiveCandidates, inactiveRangeFilter]);
 
   const productReorderCandidates = useMemo(() => {
     return detectProductReorders(orderItems, orders, clients, settings.product_reorder_days);
@@ -374,6 +471,22 @@ function AutomacoesPage() {
         barbearia,
         data: candidate.extra?.date || todayISO(),
       });
+    } else if (triggerType === "lembrete_agendamento") {
+      body = buildAutomatedWhatsAppMessage(triggerType, settings.custom_templates, {
+        cliente: candidate.name,
+        barbearia,
+        horario: candidate.extra?.time || "10:00",
+        barbeiro: candidate.extra?.professional || "nossa equipe",
+        servico: candidate.extra?.service || "corte",
+        data: candidate.extra?.date || todayISO(),
+      });
+    } else if (triggerType === "pos_atendimento") {
+      body = buildAutomatedWhatsAppMessage(triggerType, settings.custom_templates, {
+        cliente: candidate.name,
+        barbearia,
+        barbeiro: candidate.extra?.professional || "nossa equipe",
+        servico: candidate.extra?.service || "atendimento",
+      });
     }
 
     setMessageData({
@@ -510,7 +623,15 @@ function AutomacoesPage() {
 
       {/* Abas Principais de Automações */}
       <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-7 max-w-full overflow-x-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 max-w-full overflow-x-auto">
+          <TabsTrigger value="lembretes" className="gap-1 text-xs text-primary font-semibold">
+            <Clock className="h-3.5 w-3.5" />
+            Lembretes ({upcomingReminders.length})
+          </TabsTrigger>
+          <TabsTrigger value="pos_atendimento" className="gap-1 text-xs text-emerald-600 font-semibold">
+            <Star className="h-3.5 w-3.5" />
+            Pós-Atendimento ({postServiceCandidates.length})
+          </TabsTrigger>
           <TabsTrigger value="inativos" className="gap-1 text-xs">
             <UserX className="h-3.5 w-3.5" />
             Inativos ({inactiveCandidates.length})
@@ -541,6 +662,225 @@ function AutomacoesPage() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ABA 0: Lembretes Pré-Atendimento (2 horas antes) */}
+        <TabsContent value="lembretes" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6 pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    Lembretes Automáticos Pré-Atendimento
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Disparo de confirmação e lembrete {settings.reminder_hours_before || 2} horas antes do horário marcado para reduzir no-shows.
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-primary/40 text-primary">
+                    {upcomingReminders.length} horários hoje
+                  </Badge>
+                  {upcomingReminders.length > 0 && (
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground font-semibold"
+                      onClick={() => {
+                        upcomingReminders.forEach((r, idx) => {
+                          if (r.phone) {
+                            setTimeout(() => {
+                              const url = generateWhatsAppUrl(
+                                r.phone,
+                                buildAutomatedWhatsAppMessage("lembrete_agendamento", settings.custom_templates, {
+                                  cliente: r.name,
+                                  barbearia: salon?.name || "Belezi",
+                                  horario: r.time,
+                                  barbeiro: r.professional_name,
+                                  servico: r.service_name,
+                                  data: r.date,
+                                }),
+                              );
+                              window.open(url, "_blank", "noopener,noreferrer");
+                            }, idx * 400);
+                          }
+                        });
+                        toast.success(`Disparo em lote iniciado para ${upcomingReminders.length} clientes!`);
+                      }}
+                    >
+                      <Zap className="h-3.5 w-3.5" /> Disparar Todos de Hoje
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto">
+                <table className="mobile-table w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Horário</th>
+                      <th className="px-4 py-3 text-left">Cliente</th>
+                      <th className="px-4 py-3 text-left">Barbeiro</th>
+                      <th className="px-4 py-3 text-left">Serviço</th>
+                      <th className="px-4 py-3 text-center">Janela de Envio</th>
+                      <th className="px-4 py-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {upcomingReminders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
+                          Nenhum agendamento pendente para a data de hoje.
+                        </td>
+                      </tr>
+                    ) : (
+                      upcomingReminders.map((r) => (
+                        <tr key={r.id} className="border-b hover:bg-muted/20">
+                          <td data-label="Horário" className="px-4 py-3 font-bold text-foreground">
+                            {r.time}
+                          </td>
+                          <td data-label="Cliente" className="px-4 py-3">
+                            <span className="font-semibold block">{r.name}</span>
+                            <span className="text-xs text-muted-foreground">{r.phone || "Sem telefone"}</span>
+                          </td>
+                          <td data-label="Barbeiro" className="px-4 py-3 text-xs">
+                            {r.professional_name}
+                          </td>
+                          <td data-label="Serviço" className="px-4 py-3 text-xs">
+                            <Badge variant="outline">{r.service_name}</Badge>
+                          </td>
+                          <td data-label="Janela" className="px-4 py-3 text-center">
+                            {r.isWithinWindow ? (
+                              <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[11px]">
+                                🔥 Janela Ideal (Faltam {r.diffMinutes} min)
+                              </Badge>
+                            ) : r.isPast ? (
+                              <Badge variant="outline" className="text-muted-foreground text-[11px]">
+                                Atendimento em curso
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground text-[11px]">
+                                Em {r.diffMinutes} min
+                              </Badge>
+                            )}
+                          </td>
+                          <td data-label="Ação" className="px-4 py-3 text-right">
+                            <Button
+                              size="sm"
+                              disabled={!r.phone}
+                              onClick={() =>
+                                prepareMessage("lembrete_agendamento", {
+                                  id: r.client_id || r.id,
+                                  name: r.name,
+                                  phone: r.phone,
+                                  extra: {
+                                    time: r.time,
+                                    professional: r.professional_name,
+                                    service: r.service_name,
+                                    date: r.date,
+                                  },
+                                })
+                              }
+                              className="h-8 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              Lembrar WhatsApp
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ABA 0.5: Pós-Atendimento e Pesquisa de Satisfação */}
+        <TabsContent value="pos_atendimento" className="space-y-4">
+          <Card>
+            <CardHeader className="p-4 sm:p-6 pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                    Pós-Atendimento & Pesquisa de Satisfação
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Disparo de pesquisa de satisfação (nota 1 a 5) para clientes que concluíram atendimento recentemente.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="border-emerald-500/40 text-emerald-600">
+                  {postServiceCandidates.length} concluídos recentemente
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
+              <div className="overflow-x-auto">
+                <table className="mobile-table w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Data / Hora</th>
+                      <th className="px-4 py-3 text-left">Cliente</th>
+                      <th className="px-4 py-3 text-left">Barbeiro</th>
+                      <th className="px-4 py-3 text-left">Serviço Realizado</th>
+                      <th className="px-4 py-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {postServiceCandidates.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-sm text-muted-foreground">
+                          Nenhum atendimento concluído registrado recentemente.
+                        </td>
+                      </tr>
+                    ) : (
+                      postServiceCandidates.map((c) => (
+                        <tr key={c.id} className="border-b hover:bg-muted/20">
+                          <td data-label="Data / Hora" className="px-4 py-3 text-xs font-semibold">
+                            {fmtDate(c.date)} às {c.time}
+                          </td>
+                          <td data-label="Cliente" className="px-4 py-3">
+                            <span className="font-semibold block">{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{c.phone || "Sem telefone"}</span>
+                          </td>
+                          <td data-label="Barbeiro" className="px-4 py-3 text-xs font-medium">
+                            {c.professional_name}
+                          </td>
+                          <td data-label="Serviço" className="px-4 py-3 text-xs">
+                            <Badge variant="outline">{c.service_name}</Badge>
+                          </td>
+                          <td data-label="Ação" className="px-4 py-3 text-right">
+                            <Button
+                              size="sm"
+                              disabled={!c.phone}
+                              onClick={() =>
+                                prepareMessage("pos_atendimento", {
+                                  id: c.client_id || c.id,
+                                  name: c.name,
+                                  phone: c.phone,
+                                  extra: {
+                                    professional: c.professional_name,
+                                    service: c.service_name,
+                                  },
+                                })
+                              }
+                              className="h-8 gap-1.5 bg-amber-600 text-white hover:bg-amber-700 text-xs font-semibold"
+                            >
+                              <Star className="h-3.5 w-3.5" />
+                              Pedir Avaliação
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* ABA 1: Recuperação de Inativos */}
         <TabsContent value="inativos" className="space-y-4">
           <Card>
@@ -555,9 +895,40 @@ function AutomacoesPage() {
                     Envie um convite personalizado com incentivo de retorno.
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="border-amber-500/30 text-amber-600">
-                  {inactiveCandidates.length} clientes identificados
-                </Badge>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant={inactiveRangeFilter === "all" ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setInactiveRangeFilter("all")}
+                  >
+                    Todos ({inactiveCandidates.length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={inactiveRangeFilter === "30_60" ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setInactiveRangeFilter("30_60")}
+                  >
+                    30-60 dias
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={inactiveRangeFilter === "60_90" ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setInactiveRangeFilter("60_90")}
+                  >
+                    60-90 dias
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={inactiveRangeFilter === "90_plus" ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setInactiveRangeFilter("90_plus")}
+                  >
+                    90+ dias
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0 sm:p-6 sm:pt-0">
@@ -574,14 +945,14 @@ function AutomacoesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inactiveCandidates.length === 0 ? (
+                    {filteredInactiveCandidates.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-sm text-muted-foreground">
-                          Excelente! Nenhum cliente inativo acima de {settings.inactive_clients_days} dias.
+                          Nenhum cliente inativo encontrado nesta faixa de dias.
                         </td>
                       </tr>
                     ) : (
-                      inactiveCandidates.map((c) => (
+                      filteredInactiveCandidates.map((c) => (
                         <tr key={c.id} className="border-b hover:bg-muted/20">
                           <td data-label="Cliente" className="px-4 py-3 font-semibold text-foreground">
                             {c.name}

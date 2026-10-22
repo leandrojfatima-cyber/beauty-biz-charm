@@ -32,11 +32,12 @@ function AuthPage() {
 
   function enterPreviewMode(customEmail?: string) {
     const userEmail = customEmail?.trim() || "demo@belezi.com";
+    const isMaster = userEmail.toLowerCase() === "leandro.j.fatima@gmail.com";
     const demoUser = {
-      id: "00000000-0000-0000-0000-000000000000",
+      id: isMaster ? "00000000-0000-0000-0000-000000000001" : "00000000-0000-0000-0000-000000000000",
       email: userEmail,
       user_metadata: {
-        name: userEmail.includes("@") ? userEmail.split("@")[0] : "Gestor Demonstração",
+        name: isMaster ? "Leandro (Master NEXADASH)" : (userEmail.includes("@") ? userEmail.split("@")[0] : "Gestor Demonstração"),
       },
       aud: "authenticated",
       created_at: new Date().toISOString(),
@@ -44,11 +45,16 @@ function AuthPage() {
     try {
       localStorage.setItem("belezi_preview_authenticated", "true");
       localStorage.setItem("belezi_preview_user", JSON.stringify(demoUser));
+      if (isMaster) {
+        localStorage.setItem("nexadash_master_authenticated", "true");
+      } else {
+        localStorage.removeItem("nexadash_master_authenticated");
+      }
     } catch {
       // Ignore localStorage errors
     }
-    toast.success("Sessão de demonstração iniciada com sucesso!");
-    navigate({ to: "/painel" });
+    toast.success(isMaster ? "Acesso Master NEXADASH liberado!" : "Sessão iniciada com sucesso!");
+    navigate({ to: isMaster ? "/master" : "/painel" });
   }
 
   async function submit(e: React.FormEvent) {
@@ -255,7 +261,18 @@ function AuthPage() {
             disabled={loading}
           >
             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            Entrar em Modo Demonstração (Acesso Rápido)
+            Entrar como Barbearia (Demonstração)
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-9 text-xs font-semibold border-[#FF6500]/40 text-[#FF6500] hover:bg-[#FF6500]/10 hover:text-[#FF6500]"
+            onClick={() => enterPreviewMode("leandro.j.fatima@gmail.com")}
+            disabled={loading}
+          >
+            <ShieldCheck className="mr-1.5 h-3.5 w-3.5 text-[#FF6500]" />
+            Acesso Master NEXADASH (leandro.j.fatima@gmail.com)
           </Button>
         </div>
 

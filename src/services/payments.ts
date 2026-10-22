@@ -427,7 +427,6 @@ export function executeAnticipation(
   receivablesToAnticipateIds: string[],
 ): { count: number; netTotal: number } {
   const all = loadPodiumReceivables();
-  let netTotal = 0;
   const rates = loadPodiumPayRates();
 
   const simulation = simulateAnticipation(

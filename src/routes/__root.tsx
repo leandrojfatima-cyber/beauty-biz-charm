@@ -141,16 +141,32 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+let fallbackQueryClient: QueryClient | null = null;
+function getFallbackQueryClient(): QueryClient {
+  if (!fallbackQueryClient) {
+    fallbackQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 1000 * 60,
+          retry: 1,
+        },
+      },
+    });
+  }
+  return fallbackQueryClient;
+}
+
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const routeContext = Route.useRouteContext();
+  const queryClient = routeContext?.queryClient ?? getFallbackQueryClient();
   const router = useRouter();
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      router?.invalidate();
+      if (event !== "SIGNED_OUT") queryClient?.invalidateQueries();
     });
-    return () => data.subscription.unsubscribe();
+    return () => data?.subscription?.unsubscribe();
   }, [router, queryClient]);
 
   return (

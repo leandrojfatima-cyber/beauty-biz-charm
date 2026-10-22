@@ -220,33 +220,23 @@ function ComandaPage() {
     onError: err,
   });
 
-  if (!order) return <p className="p-8 text-muted-foreground">Carregando comanda...</p>;
-  const open = order.status === "aberta";
-  const orderItems = Array.isArray(order.order_items) ? order.order_items : [];
+  const open = order?.status === "aberta";
+  const orderItems = useMemo(
+    () => (Array.isArray(order?.order_items) ? order.order_items : []),
+    [order?.order_items],
+  );
   const subtotal = orderItems.reduce(
     (s: number, i: any) => s + Number(i?.qty ?? 0) * Number(i?.unit_price ?? 0),
     0,
   );
-  const total = Math.max(subtotal - Number(order.discount ?? 0), 0);
-  const proName = (pid: string) => pros.find((p: any) => p.id === pid)?.name ?? "—";
-  const clientName = clients.find((c: any) => c.id === order.client_id)?.name ?? "Cliente Avulso";
-
-  const catalog =
-    item.kind === "servico"
-      ? services.filter((s: any) => s.active)
-      : products.filter((p: any) => p.for_sale && p.active);
-
-  // Produtos e serviços complementares sugeridos para Upsell rápido
-  const suggestedProducts = products.filter((p: any) => p.for_sale && p.active).slice(0, 4);
-  const suggestedServices = services
-    .filter((s: any) => s.active && !orderItems.some((oi: any) => oi.service_id === s.id))
-    .slice(0, 3);
+  const total = Math.max(subtotal - Number(order?.discount ?? 0), 0);
+  const clientName = clients.find((c: any) => c.id === order?.client_id)?.name ?? "Cliente Avulso";
 
   // Cálculo de Split de Pagamento Podium Pay em tempo real
   const splitItems = useMemo(() => {
     return orderItems.map((i: any) => ({
       professional_id: i.professional_id,
-      professional_name: proName(i.professional_id),
+      professional_name: pros.find((p: any) => p.id === i.professional_id)?.name ?? "—",
       qty: Number(i.qty || 0),
       unit_price: Number(i.unit_price || 0),
       commission_pct: Number(i.commission_pct || 0),
@@ -259,12 +249,12 @@ function ComandaPage() {
 
   const pixPayload = useMemo(() => {
     return generatePodiumPixPayload({
-      orderId: order.number || order.id,
+      orderId: order?.number || order?.id || "0",
       amount: total,
       clientName,
-      description: `Comanda #${order.number} Belezi`,
+      description: `Comanda #${order?.number || ""} Belezi`,
     });
-  }, [order, total, clientName]);
+  }, [order?.number, order?.id, total, clientName]);
 
   const handleCopyPix = () => {
     if (navigator?.clipboard) {
@@ -274,6 +264,20 @@ function ComandaPage() {
       setTimeout(() => setCopiedPix(false), 2500);
     }
   };
+
+  if (!order) return <p className="p-8 text-muted-foreground">Carregando comanda...</p>;
+  const proName = (pid: string) => pros.find((p: any) => p.id === pid)?.name ?? "—";
+
+  const catalog =
+    item.kind === "servico"
+      ? services.filter((s: any) => s.active)
+      : products.filter((p: any) => p.for_sale && p.active);
+
+  // Produtos e serviços complementares sugeridos para Upsell rápido
+  const suggestedProducts = products.filter((p: any) => p.for_sale && p.active).slice(0, 4);
+  const suggestedServices = services
+    .filter((s: any) => s.active && !orderItems.some((oi: any) => oi.service_id === s.id))
+    .slice(0, 3);
 
   return (
     <div className="max-w-5xl space-y-4 pb-12">

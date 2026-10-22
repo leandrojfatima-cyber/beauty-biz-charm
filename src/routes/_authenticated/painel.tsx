@@ -45,6 +45,7 @@ import {
 } from "@/lib/dashboard-engine";
 import { loadExecutiveDashboard } from "@/lib/dashboard-data";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientAppAcquisitionCard } from "@/components/ClientAppAcquisitionCard";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -412,6 +413,11 @@ export function Painel() {
         <DashboardSkeleton />
       ) : analytics ? (
         <div className="executive-dashboard-report space-y-6">
+          {/* Card de Captação & Agendamentos do Cliente (PWA) */}
+          <div className="dashboard-print-hide">
+            <ClientAppAcquisitionCard />
+          </div>
+
           {/* ========================================================================= */}
           {/* 1. MÉTRICAS EXECUTIVAS DE TOPO (ETAPA 12) */}
           {/* ========================================================================= */}

@@ -165,14 +165,14 @@ const INITIAL_ACTIVATIONS: AccountActivationItem[] = [
     },
     conditions_notes: "Contrato para 2 unidades com treinamento presencial incluso.",
     payment_status: "pago_confirmado",
-    payment_method: "Cartão Mercado Pago Online",
-    payment_reference: "MP-883921-APPROVED",
+    payment_method: "Pix Direto NEXADASH",
+    payment_reference: "NX-883921-APPROVED",
     payment_confirmed_at: "2026-10-14T14:15:00Z",
     account_prepared: false, // Em preparação
     account_prepared_at: null,
     catalog_loaded: false,
     settings_configured: true,
-    activation_status: "pendente_liberacao_manual", // Mesmo aprovado no MP, exige liberação manual!
+    activation_status: "pendente_liberacao_manual", // Mesmo com pagamento confirmado, exige liberação manual!
     authorized_by_admin: null,
     authorized_at: null,
     deliberation_notes: null,
@@ -477,7 +477,7 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
       },
       conditions_notes: "",
       payment_status: "pendente",
-      payment_method: "Pix / Mercado Pago",
+      payment_method: "Pix Direto NEXADASH",
       payment_reference: "",
       payment_confirmed_at: null,
       account_prepared: false,
@@ -1441,7 +1441,7 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
             <div>
               <Label className="mb-1 block">Método de Liquidação</Label>
               <Input
-                placeholder="Ex: Pix Banco Inter, Cartão Mercado Pago, Boleto Compensado"
+                placeholder="Ex: Pix Banco Inter, Pix Direto NEXADASH, Boleto Compensado"
                 value={paymentForm.method}
                 onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
               />
@@ -1450,7 +1450,7 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
             <div>
               <Label className="mb-1 block">Código de Autenticação / Transação Bancária</Label>
               <Input
-                placeholder="Ex: E2E-994827103 ou ID Mercado Pago"
+                placeholder="Ex: E2E-994827103 ou Autenticação Pix Banco Inter"
                 value={paymentForm.reference}
                 onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
               />

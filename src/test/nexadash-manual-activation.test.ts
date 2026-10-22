@@ -118,9 +118,9 @@ describe("NEXADASH Liberação Manual de Acesso & Ciclo de Ativação (Etapa 5)"
       "2027-10-16"
     );
 
-    // Simulação: Mercado Pago ou Pix aprova pagamento online automaticamente
+    // Simulação: Gateway Online ou Pix Direto NEXADASH aprova pagamento online automaticamente
     act.payment_status = "pago_confirmado";
-    act.payment_reference = "MP-ONLINE-AUTO-APPROVED-998822";
+    act.payment_reference = "NX-ONLINE-AUTO-APPROVED-998822";
 
     // O status do acesso DEVE permanecer estritamente bloqueado (pendente_liberacao_manual)
     expect(act.payment_status).toBe("pago_confirmado");

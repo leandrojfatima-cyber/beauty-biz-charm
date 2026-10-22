@@ -302,10 +302,10 @@ CREATE POLICY "master_write" ON public.plans FOR ALL TO authenticated USING (pub
 -- 5. SEED INICIAL DE PLANOS (Caso não existam)
 INSERT INTO public.plans (name, description, price, price_max, installments, installment_price, optional, active, highlight, sort_order, payment_url)
 SELECT v.* FROM (VALUES
-  ('NEXADASH START', 'Para autônomo/MEI. Recursos básicos.', 29.90::numeric, null::numeric, 1, 0::numeric, false, true, false, 1, 'https://mpago.la/1i9ivFj'),
-  ('NEXADASH PRO', 'Dashboard completo, relatórios, exportação e recursos adicionais.', 59.90, null, 1, 0, false, true, true, 2, 'https://mpago.la/1i9ivFj'),
-  ('NEXADASH IA', 'Tudo do Pro + análise inteligente, relatórios automáticos e recomendações.', 99.90, null, 1, 0, false, true, false, 3, 'https://mpago.la/1i9ivFj'),
-  ('NEXADASH BUSINESS', 'Para empresas maiores: usuários adicionais, personalização, suporte e módulos específicos.', 199.00, 299.00, 1, 0, false, true, false, 4, 'https://mpago.la/1i9ivFj')
+  ('Plano Mensal (1 Mês)', 'Acesso completo ao ecossistema Belezi por 30 dias com todas as automações e Podium Pay.', 59.90::numeric, null::numeric, 1, 0::numeric, false, true, false, 1, 'https://pix.nexadash.com.br/planos'),
+  ('Plano Trimestral (3 Meses)', 'Economia proporcional garantida por 90 dias com suporte prioritário.', 159.90, null, 3, 53.30, false, true, false, 2, 'https://pix.nexadash.com.br/planos'),
+  ('Plano Semestral (6 Meses)', 'Melhor custo-benefício para barbearias em expansão acelerada.', 319.90, null, 6, 53.31, false, true, true, 3, 'https://pix.nexadash.com.br/planos'),
+  ('Plano Anual (12 Meses)', 'Uso contínuo sem reajustes contratuais por 12 meses com onboarding VIP.', 639.90, null, 12, 53.32, false, true, false, 4, 'https://pix.nexadash.com.br/planos')
 ) AS v(name, description, price, price_max, installments, installment_price, optional, active, highlight, sort_order, payment_url)
 WHERE NOT EXISTS (SELECT 1 FROM public.plans);
 
