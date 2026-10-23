@@ -31,6 +31,7 @@ import {
   Copy,
   QrCode,
   Printer,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ import {
   LegalContractModal,
   LegalContractData,
 } from "@/components/nexadash/LegalContractModal";
+import { ProspectingHub } from "@/components/nexadash/ProspectingHub";
 
 export const Route = createFileRoute("/_authenticated/master")({
   head: () => ({
@@ -825,8 +827,16 @@ function NexadashCommercialHub() {
             </Badge>
             <Button
               size="sm"
+              onClick={() => setActiveTab("prospecting")}
+              className="bg-[#FF6500] text-white hover:bg-[#E55B00] shadow-sm font-semibold"
+            >
+              <Megaphone className="mr-1.5 h-4 w-4" />
+              Kit de Captação & PIX
+            </Button>
+            <Button
+              size="sm"
               onClick={() => setSubscriptionModalOpen(true)}
-              className="bg-[#FF6500] text-white hover:bg-[#E55B00] shadow-sm font-medium"
+              className="bg-white/10 text-white hover:bg-white/20 shadow-sm font-medium border border-white/20"
             >
               <Plus className="mr-1 h-4 w-4" />
               Nova Assinatura
@@ -844,19 +854,26 @@ function NexadashCommercialHub() {
         </div>
       </div>
 
-      {/* NAVEGAÇÃO ENTRE MÓDULOS DE ASSINATURA, VENDAS, LIBERAÇÃO E APP DO CLIENTE */}
+      {/* NAVEGAÇÃO ENTRE MÓDULOS DE ASSINATURA, VENDAS, CAPTAÇÃO, LIBERAÇÃO E APP DO CLIENTE */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 h-auto p-1 bg-muted/60 border">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto p-1 bg-muted/60 border">
+          <TabsTrigger
+            value="prospecting"
+            className="data-[state=active]:bg-[#FF6500] data-[state=active]:text-white py-2 text-xs font-semibold shadow-sm"
+          >
+            <Megaphone className="mr-1.5 h-3.5 w-3.5" />
+            Captação & PIX
+          </TabsTrigger>
           <TabsTrigger
             value="activations"
-            className="data-[state=active]:bg-[#FF6500] data-[state=active]:text-white py-2 text-xs font-semibold shadow-sm"
+            className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs font-semibold shadow-sm"
           >
             <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
             Liberação Manual (Etapa 5)
           </TabsTrigger>
           <TabsTrigger value="subscriptions" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <Receipt className="mr-1.5 h-3.5 w-3.5" />
-            Contratos & Planos ({subscriptions.length})
+            Contratos ({subscriptions.length})
           </TabsTrigger>
           <TabsTrigger value="client_apps" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <Smartphone className="mr-1.5 h-3.5 w-3.5" />
@@ -864,7 +881,7 @@ function NexadashCommercialHub() {
           </TabsTrigger>
           <TabsTrigger value="billing" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <CreditCard className="mr-1.5 h-3.5 w-3.5" />
-            Cobranças & Pagamentos ({invoices.length})
+            Cobranças ({invoices.length})
           </TabsTrigger>
           <TabsTrigger value="revenue_reports" className="data-[state=active]:bg-[#0B192C] data-[state=active]:text-white py-2 text-xs">
             <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
@@ -880,7 +897,23 @@ function NexadashCommercialHub() {
           </TabsTrigger>
         </TabsList>
 
-        {/* 0. MÓDULO EXCLUSIVO DA ETAPA 5: CICLO DE LIBERAÇÃO MANUAL DE ACESSO */}
+        {/* 0. MÓDULO EXCLUSIVO DE CAPTAÇÃO DE NOVOS CLIENTES, PITCHES WHATSAPP, BANNER E PIX */}
+        <TabsContent value="prospecting" className="space-y-6">
+          <ProspectingHub
+            leads={leads}
+            onOpenProposal={(leadData) => {
+              setNewProposal({
+                ...newProposal,
+                lead_name: leadData.company,
+                legal_representative: leadData.name,
+                phone: leadData.phone,
+              });
+              setProposalModalOpen(true);
+            }}
+          />
+        </TabsContent>
+
+        {/* 0.1 MÓDULO EXCLUSIVO DA ETAPA 5: CICLO DE LIBERAÇÃO MANUAL DE ACESSO */}
         <TabsContent value="activations" className="space-y-6">
           <ActivationCycleHub adminEmail="leandro.j.fatima@gmail.com" />
         </TabsContent>
@@ -1715,11 +1748,13 @@ function NexadashCommercialHub() {
                         variant="outline"
                         className="h-7 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
                         onClick={() => {
+                          const demoUrl = typeof window !== "undefined" ? `${window.location.origin}/auth?demo=1` : "https://belezi.com.br/auth?demo=1";
                           const msg = encodeURIComponent(
-                            `Olá ${contractObj.legal_representative}! Segue a proposta formal e o Termo de Adesão e Licenciamento NEXADASH para a ${p.lead_name}:\nPlano: ${p.plan_name}\nValor: ${brl(contractObj.contracted_price)}/${contractObj.billing_cycle}\nContrato Nº: ${contractObj.contract_number}\nAceite no ato da instalação do sistema.\nLink de confirmação: ${p.payment_link || "https://pix.nexadash.com.br"}`
+                            `Olá ${contractObj.legal_representative}! Segue a proposta formal e o Termo de Adesão e Licenciamento NEXADASH para a ${p.lead_name}:\n\n📋 Plano: ${p.plan_name}\n💰 Investimento: ${brl(contractObj.contracted_price)}/${contractObj.billing_cycle}\n📜 Contrato Nº: ${contractObj.contract_number}\n\n👉 Teste prático do sistema (sem senha): ${demoUrl}\n\n🔑 Chave PIX Oficial para Ativação:\nChave: nexadash.nsi@gmail.com (E-mail)\nBanco: C6 Bank\nFavorecido: Leandro José de Fátima\n\nO termo formal de adesão é validado no ato da instalação do sistema.`
                           );
                           window.open(`https://wa.me/?text=${msg}`, "_blank");
                         }}
+                        title="Enviar Proposta e PIX no WhatsApp"
                       >
                         <Send className="h-3 w-3" />
                       </Button>
@@ -1815,15 +1850,16 @@ function NexadashCommercialHub() {
                               className="h-6 text-[10px] px-1.5 text-emerald-700 hover:bg-emerald-50"
                               onClick={() => {
                                 const cleanPhone = (lead.phone || "").replace(/\D/g, "");
+                                const demoUrl = typeof window !== "undefined" ? `${window.location.origin}/auth?demo=1` : "https://belezi.com.br/auth?demo=1";
                                 const msg = encodeURIComponent(
-                                  `Olá ${lead.name.split(" ")[0]}! Aqui é o Leandro da NEXADASH. Como estão os agendamentos e o controle na ${lead.company_name}?`
+                                  `Olá ${lead.name.split(" ")[0]}! Aqui é o Leandro da NEXADASH. Liberei um acesso de teste exclusivo do sistema BELEZI para a ${lead.company_name}:\n\n👉 Teste o sistema sem senha aqui: ${demoUrl}\n\nVocê tem seu próprio App de agendamento no celular dos seus clientes, sem pagar comissão por corte e com rateio automático para os barbeiros. Me diga o que achou!`
                                 );
                                 const waUrl = cleanPhone
                                   ? `https://wa.me/55${cleanPhone}?text=${msg}`
                                   : `https://wa.me/?text=${msg}`;
                                 window.open(waUrl, "_blank");
                               }}
-                              title="Conversar no WhatsApp"
+                              title="Enviar Pitch & Teste no WhatsApp"
                             >
                               <Send className="h-3 w-3" />
                             </Button>

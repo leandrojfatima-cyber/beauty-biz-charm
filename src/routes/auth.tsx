@@ -53,6 +53,17 @@ function AuthPage() {
       ) {
         setMasterModalOpen(true);
       }
+
+      // Se for link de teste/demonstração enviado pelo Leandro para o Barbeiro:
+      if (
+        params.get("demo") === "1" ||
+        params.get("demo") === "barbearia" ||
+        params.get("teste") === "1" ||
+        params.get("trial") === "1"
+      ) {
+        toast.info("Acesso Demonstração Iniciado! Conheça o sistema da sua barbearia.");
+        enterPreviewMode("admin@barbearia.com");
+      }
     }
 
     // 2. Atalho de teclado reservado para Leandro: Alt + M ou Ctrl + Shift + M

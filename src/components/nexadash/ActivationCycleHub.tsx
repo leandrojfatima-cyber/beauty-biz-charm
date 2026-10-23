@@ -131,7 +131,7 @@ const INITIAL_ACTIVATIONS: AccountActivationItem[] = [
     },
     conditions_notes: "Conferido: 4 barbeiros, módulo de comissões ativado. Desconto de 10% no 1º trimestre acordado.",
     payment_status: "pago_confirmado",
-    payment_method: "Pix Banco Inter",
+    payment_method: "Pix C6 Bank (nexadash.nsi@gmail.com)",
     payment_reference: "E2E-994827103-NX",
     payment_confirmed_at: "2026-10-15T11:30:00Z",
     account_prepared: true,

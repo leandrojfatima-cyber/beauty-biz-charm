@@ -259,7 +259,7 @@ Código Hash de Autenticidade: ${acceptanceHash}`;
                 </div>
               </div>
               <p className="text-justify">
-                3.1. O pagamento das mensalidades ou anuidades será realizado conforme o ciclo ajustado, mediante Pix, boleto ou cartão. A liberação do acesso e a manutenção do sistema estão condicionadas à regular liquidação das faturas nos respectivos vencimentos.
+                3.1. O pagamento das mensalidades ou anuidades será realizado conforme o ciclo ajustado, mediante Pix Oficial (Chave: <strong>nexadash.nsi@gmail.com</strong> – Banco C6 Bank – Titular: <strong>Leandro José de Fátima</strong> / NEXADASH), transferência ou fatura bancária. A liberação do acesso e a manutenção do sistema estão condicionadas à regular liquidação das faturas nos respectivos vencimentos.
               </p>
               <p className="text-justify mt-1">
                 3.2. Os valores sofrerão correção anual com base no índice oficial IPCA (Índice Nacional de Preços ao Consumidor Amplo) apurado pelo IBGE, preservando o equilíbrio econômico-financeiro da prestação dos serviços.
