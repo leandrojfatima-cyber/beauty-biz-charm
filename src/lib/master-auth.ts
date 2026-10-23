@@ -31,36 +31,34 @@ export async function checkIsMaster(): Promise<boolean> {
     const { data: authData } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
     const sessionEmail = authData?.user?.email?.trim().toLowerCase();
 
-    if (sessionEmail && sessionEmail === MASTER_EMAIL.toLowerCase()) {
-      return true;
+    // Se o usuário está autenticado no Supabase Auth:
+    if (sessionEmail) {
+      // Regra Categórica: APENAS leandro.j.fatima@gmail.com possui acesso Master!
+      // Barbeiros, donos de barbearia e clientes recebem estritamente FALSE:
+      return sessionEmail === MASTER_EMAIL.toLowerCase();
     }
 
-    // 2. Verificar usuário em modo preview / localStorage
+    // 2. Verificar usuário em modo preview / demonstração
     if (typeof window !== "undefined") {
-      const isMasterSession = localStorage.getItem("nexadash_master_authenticated") === "true";
       const previewUserRaw = localStorage.getItem("belezi_preview_user");
       if (previewUserRaw) {
         try {
           const parsed = JSON.parse(previewUserRaw);
-          if (isMasterEmail(parsed?.email)) {
-            return true;
+          const email = parsed?.email?.trim().toLowerCase();
+          // Se houver e-mail de barbeiro ou cliente, valida estritamente:
+          if (email) {
+            return email === MASTER_EMAIL.toLowerCase();
           }
         } catch {
           // ignore parsing error
         }
       }
-      if (isMasterSession) {
+
+      // Em modo de preview isolado sem usuário divergente:
+      const isMasterSession = localStorage.getItem("nexadash_master_authenticated") === "true";
+      if (isMasterSession && !previewUserRaw) {
         return true;
       }
-    }
-
-    // 3. Verificar via RPC claim_master (se o banco confirmar)
-    const { data: rpcData, error: rpcErr } = await (supabase as any)
-      .rpc("claim_master")
-      .catch(() => ({ data: null, error: true }));
-
-    if (!rpcErr && rpcData === true) {
-      return true;
     }
 
     // NUNCA conceder permissão máster por exceção ou fallback cego

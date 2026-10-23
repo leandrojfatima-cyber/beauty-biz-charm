@@ -1,13 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Sparkles, ShieldCheck } from "lucide-react";
+import { Sparkles, ShieldCheck, KeyRound, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { logAudit } from "@/lib/audit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -28,7 +36,51 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [masterModalOpen, setMasterModalOpen] = useState(false);
+  const [masterPin, setMasterPin] = useState("");
+  const [footerClicks, setFooterClicks] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // 1. Detectar parâmetro discreto na URL (?master=1, ?master=true ou ?cmd=master)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (
+        params.get("master") === "1" ||
+        params.get("master") === "true" ||
+        params.get("cmd") === "master" ||
+        params.get("role") === "master"
+      ) {
+        setMasterModalOpen(true);
+      }
+    }
+
+    // 2. Atalho de teclado reservado para Leandro: Alt + M ou Ctrl + Shift + M
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.altKey && e.key.toLowerCase() === "m") ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "m")
+      ) {
+        e.preventDefault();
+        setMasterModalOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleFooterClick = () => {
+    setFooterClicks((prev) => {
+      const next = prev + 1;
+      if (next >= 3) {
+        setMasterModalOpen(true);
+        toast.info("Terminal Master NEXADASH desbloqueado.");
+        return 0;
+      }
+      return next;
+    });
+  };
 
   function enterPreviewMode(customEmail?: string) {
     const userEmail = customEmail?.trim() || "demo@belezi.com";
@@ -64,6 +116,30 @@ function AuthPage() {
 
     try {
       const cleanEmail = email.trim();
+      const isMasterAttempt = cleanEmail.toLowerCase() === "leandro.j.fatima@gmail.com";
+
+      // Se for a conta Master digitada no formulário de login padrão:
+      if (isMasterAttempt) {
+        if (password) {
+          try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password,
+            });
+            if (!error && data?.user) {
+              localStorage.setItem("nexadash_master_authenticated", "true");
+              await logAudit("Entrou no sistema Master", "E-mail e senha").catch(() => {});
+              toast.success("Acesso Master NEXADASH autenticado!");
+              navigate({ to: "/master" });
+              return;
+            }
+          } catch {
+            // fallback para o ambiente preview
+          }
+        }
+        enterPreviewMode("leandro.j.fatima@gmail.com");
+        return;
+      }
 
       if (mode === "in") {
         try {
@@ -263,17 +339,6 @@ function AuthPage() {
             <Sparkles className="mr-1.5 h-3.5 w-3.5" />
             Entrar como Barbearia (Demonstração)
           </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-9 text-xs font-semibold border-[#FF6500]/40 text-[#FF6500] hover:bg-[#FF6500]/10 hover:text-[#FF6500]"
-            onClick={() => enterPreviewMode("leandro.j.fatima@gmail.com")}
-            disabled={loading}
-          >
-            <ShieldCheck className="mr-1.5 h-3.5 w-3.5 text-[#FF6500]" />
-            Acesso Master NEXADASH (leandro.j.fatima@gmail.com)
-          </Button>
         </div>
 
         <button
@@ -293,11 +358,96 @@ function AuthPage() {
           >
             ← Voltar para a página inicial
           </Link>
-          <p className="mt-2 text-[10px] text-muted-foreground/60">
+          <p
+            onClick={handleFooterClick}
+            className="mt-2 text-[10px] text-muted-foreground/60 select-none cursor-default hover:text-muted-foreground/90 transition-colors"
+            title="NEXADASH Engine · Build Seguro"
+          >
             Belezi © 2026 · NEXADASH Command Center
           </p>
         </div>
       </div>
+
+      {/* Terminal Secreto / Acesso Restrito Master (Totalmente invisível para barbearias e clientes) */}
+      <Dialog open={masterModalOpen} onOpenChange={setMasterModalOpen}>
+        <DialogContent className="max-w-md bg-zinc-950 text-zinc-100 border-zinc-800 p-6 shadow-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-9 w-9 rounded-lg bg-[#FF6500]/20 border border-[#FF6500]/40 flex items-center justify-center text-[#FF6500] shrink-0">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-white tracking-wide">
+                  Terminal de Comando Master
+                </DialogTitle>
+                <p className="text-[11px] text-zinc-400">
+                  NEXADASH Sistemas Inteligentes · Canal Reservado
+                </p>
+              </div>
+            </div>
+            <DialogDescription className="text-xs text-zinc-400 pt-2 border-t border-zinc-800/80">
+              Ambiente de governança, auditoria e gestão global exclusivo para o administrador titular.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <div className="rounded-lg bg-zinc-900/90 border border-zinc-800 p-3 space-y-2">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">
+                Credencial Titular Master
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono text-zinc-200">
+                <span>leandro.j.fatima@gmail.com</span>
+                <span className="px-1.5 py-0.5 rounded bg-[#FF6500]/20 text-[#FF6500] font-bold text-[9px]">
+                  AUTORIZADO
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-zinc-300">Chave de Segurança / PIN (Opcional)</Label>
+              <Input
+                type="password"
+                placeholder="Insira sua senha ou pressione Enter..."
+                value={masterPin}
+                onChange={(e) => setMasterPin(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setMasterModalOpen(false);
+                    enterPreviewMode("leandro.j.fatima@gmail.com");
+                  }
+                }}
+                className="bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#FF6500] h-9 text-xs"
+                autoFocus
+              />
+              <p className="text-[10px] text-zinc-500">
+                Atalhos rápidos: Pressione Enter ou use o atalho Alt + M na página de login.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-zinc-800/80">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-900"
+              onClick={() => setMasterModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="text-xs font-bold bg-[#FF6500] text-white hover:bg-[#FF6500]/90 shadow-md shadow-[#FF6500]/20"
+              onClick={() => {
+                setMasterModalOpen(false);
+                enterPreviewMode("leandro.j.fatima@gmail.com");
+              }}
+            >
+              <ShieldCheck className="mr-1.5 h-4 w-4" />
+              Entrar como Master NEXADASH
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

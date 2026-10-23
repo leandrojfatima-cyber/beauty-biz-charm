@@ -25,6 +25,8 @@ import {
   MessageSquare,
   ChevronRight,
   ShieldAlert,
+  FileText,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,10 @@ import {
 } from "@/components/ui/select";
 import { brl } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
+import {
+  LegalContractModal,
+  LegalContractData,
+} from "./LegalContractModal";
 
 export interface AccountActivationItem {
   id: string;
@@ -332,8 +338,40 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
   const [authorizeModalOpen, setAuthorizeModalOpen] = useState(false);
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
+  const [selectedContractForModal, setSelectedContractForModal] = useState<LegalContractData | null>(null);
 
   const [selectedItem, setSelectedItem] = useState<AccountActivationItem | null>(null);
+
+  function handleRegisterContractAcceptanceFromModal(contractId: string) {
+    const updated = activations.map((item) => {
+      if (item.id === contractId) {
+        const now = new Date().toISOString();
+        return {
+          ...item,
+          conditions_verified: true,
+          conditions_verified_at: now,
+          conditions_checklist: {
+            ...item.conditions_checklist,
+            terms_accepted: true,
+          },
+        };
+      }
+      return item;
+    });
+
+    saveAndPersist(updated);
+    if (selectedContractForModal && selectedContractForModal.id === contractId) {
+      setSelectedContractForModal({
+        ...selectedContractForModal,
+        status: "ativo",
+        accepted_at: new Date().toLocaleString("pt-BR"),
+        accepted_by_ip: "189.40.122.42",
+        acceptance_hash: `SHA256-${btoa(selectedContractForModal.company_name).slice(0, 16).toUpperCase()}`,
+      });
+    }
+    toast.success("Aceite eletrônico do contrato registrado com sucesso no ato da instalação!");
+  }
 
   // Estados dos formulários de cada passo
   // Passo 1: Nova Contratação
@@ -1126,6 +1164,38 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
 
                       <Button
                         size="sm"
+                        variant="outline"
+                        className="h-8 text-xs bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100"
+                        onClick={() => {
+                          setSelectedContractForModal({
+                            id: item.id,
+                            contract_number: `NX-CONTRATO-2026-${item.id.replace(/\D/g, "") || "001"}`,
+                            company_name: item.company_name,
+                            legal_representative: item.owner_name,
+                            document: "Inscrito no Onboarding",
+                            phone: item.phone,
+                            email: item.owner_email,
+                            city: item.city,
+                            plan_name: item.plan_name,
+                            contracted_price: item.contracted_value,
+                            billing_cycle: item.billing_cycle,
+                            special_conditions: item.conditions_notes,
+                            started_at: item.started_at,
+                            valid_until: item.valid_until,
+                            status: item.activation_status === "autorizado_ativo" ? "ativo" : "pendente_aceite",
+                            accepted_at: item.conditions_checklist.terms_accepted ? (item.conditions_verified_at || `${item.started_at} 10:00:00`) : null,
+                            accepted_by_ip: item.conditions_checklist.terms_accepted ? "189.40.122.25" : null,
+                            acceptance_hash: item.conditions_checklist.terms_accepted ? `SHA256-${btoa(item.company_name).slice(0, 16).toUpperCase()}` : null,
+                          });
+                          setLegalModalOpen(true);
+                        }}
+                      >
+                        <FileText className="mr-1.5 h-3.5 w-3.5 text-[#FF6500]" />
+                        Contrato & Aceite
+                      </Button>
+
+                      <Button
+                        size="sm"
                         variant="ghost"
                         onClick={() => {
                           setSelectedItem(item);
@@ -1736,6 +1806,14 @@ export function ActivationCycleHub({ adminEmail = "leandro.j.fatima@gmail.com" }
           )}
         </DialogContent>
       </Dialog>
+
+      {/* MODAL: VISUALIZAÇÃO E IMPRESSÃO DO CONTRATO JURÍDICO & TERMO DE ADESÃO */}
+      <LegalContractModal
+        open={legalModalOpen}
+        onOpenChange={setLegalModalOpen}
+        contract={selectedContractForModal}
+        onRegisterAcceptance={handleRegisterContractAcceptanceFromModal}
+      />
     </div>
   );
 }

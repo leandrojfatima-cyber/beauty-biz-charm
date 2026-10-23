@@ -209,27 +209,32 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
 
-          {/* PAINEL MASTER NEXADASH — ESTRITAMENTE VISÍVEL APENAS PARA LEANDRO / MASTER */}
-          {isMaster && (
-            <div className="pt-3 border-t border-sidebar-border/30 mt-2">
+          {/* PAINEL MASTER NEXADASH — ESTRITAMENTE EXCLUSIVO PARA O ADMINISTRADOR MASTER (LEANDRO) */}
+          {Boolean(isMaster) && (
+            <div className="pt-3 border-t border-sidebar-border/30 mt-2" data-master-only="true">
               <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#FF8C38] flex items-center justify-between">
                 <span>Governança Geral</span>
-                <span className="text-[9px] bg-[#FF6500]/20 text-[#FF6500] px-1 py-0.2 rounded font-mono">MASTER</span>
+                <span className="text-[9px] bg-[#FF6500]/20 text-[#FF6500] px-1.5 py-0.5 rounded font-mono font-bold">
+                  EXCLUSIVO MASTER
+                </span>
               </div>
               <Link
                 to="/master"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-lg px-3 py-2 text-xs md:text-sm font-semibold transition-colors hover:bg-[#FF6500]/15 text-[#FF8C38] bg-[#FF6500]/10 border border-[#FF6500]/25 shadow-xs"
+                className="flex items-center justify-between rounded-lg px-3 py-2 text-xs md:text-sm font-bold transition-all text-white bg-gradient-to-r from-[#0B192C] to-[#1E3E62] border border-[#FF6500]/50 hover:border-[#FF6500] hover:shadow-md hover:shadow-[#FF6500]/10 shadow-xs group"
                 activeProps={{
-                  className: "bg-[#FF6500] text-white shadow-sm [&>div>svg]:text-white",
+                  className: "bg-gradient-to-r from-[#FF6500] to-[#E55B00] text-white border-[#FF6500] shadow-sm [&>div>svg]:text-white",
                 }}
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <ShieldCheck className="h-4 w-4 shrink-0 text-[#FF6500]" />
-                  <span className="truncate">Painel NEXADASH</span>
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-[#FF6500] group-hover:scale-110 transition-transform" />
+                  <div className="truncate text-left leading-tight">
+                    <span className="truncate block font-bold text-xs text-white">Painel Master NEXADASH</span>
+                    <span className="text-[9px] text-white/70 font-mono block font-normal">Exclusivo Leandro (Admin)</span>
+                  </div>
                 </div>
-                <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-inherit uppercase font-mono">
-                  Full
+                <span className="text-[8px] bg-[#FF6500] text-white px-1.5 py-0.5 rounded uppercase font-mono font-bold tracking-wider shrink-0">
+                  Restrito
                 </span>
               </Link>
             </div>
